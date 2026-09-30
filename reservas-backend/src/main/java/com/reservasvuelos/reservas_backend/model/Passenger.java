@@ -3,6 +3,7 @@ package com.reservasvuelos.reservas_backend.model;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.ToString;
 import java.time.LocalDate;
 
 
