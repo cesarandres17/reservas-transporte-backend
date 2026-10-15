@@ -8,5 +8,13 @@ import lombok.Data;
 @NotBlank 
 
 public class Seat {
+    private Long idSeat;
+    private Vehiculo vehicle;
+    private String seatNumber;
+    private ClaseServicio serviceClass;
+    private String position;
+    private boolean isAvailable;
+
+
     
 }

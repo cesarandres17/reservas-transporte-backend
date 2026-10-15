@@ -5,7 +5,6 @@ import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import com.reservasvuelos.reservas_backend.model.enums.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -16,7 +15,6 @@ import lombok.ToString;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Empleado {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

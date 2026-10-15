@@ -3,7 +3,6 @@ package com.reservasvuelos.reservas_backend.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.time.LocalDate;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -14,7 +13,6 @@ import lombok.ToString;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Cliente {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,7 +25,7 @@ public class Cliente {
 
     @NotBlank
     @Size(max = 20)
-    @Column(length = 20, nullable = false)
+    @Column(name= "Documento", length = 20, nullable = false)
     private String numeroDocumento;
 
     @NotBlank
@@ -66,4 +64,10 @@ public class Cliente {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "cod_ciudad", nullable = false)
     private Ciudad ciudad;
+
+    @NotNull
+    @ToString.Exclude
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "cod_pais", nullable = false)
+    private Pais pais;
 }
