@@ -26,7 +26,7 @@ public class DepartamentoControlador {
         return ResponseEntity.ok(departamentoServicio.buscarTodos());
     }
 
-    @GetMapping("/pais/{codPais}")
+    @GetMapping("/departamentos/pais/{codPais}")
     public ResponseEntity<List<Departamento>> obtenerDepartamentosPorPais(@PathVariable Long codPais) {
       return ResponseEntity.ok(departamentoServicio.buscarPorPais(codPais));
     }
