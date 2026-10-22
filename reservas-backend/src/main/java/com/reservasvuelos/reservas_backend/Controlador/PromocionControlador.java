@@ -3,20 +3,20 @@ package com.reservasvuelos.reservas_backend.Controlador;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.reservasvuelos.reservas_backend.model.Promocion;
 import com.reservasvuelos.reservas_backend.servicios.PromocionServicio;
 
-@Controller
+@RestController
 @RequestMapping("/promociones")
-public class PromocionController {
+public class PromocionControlador {
 
     private final PromocionServicio promocionServicio;
 
-    public PromocionController(PromocionServicio promocionServicio) {
+    public PromocionControlador(PromocionServicio promocionServicio) {
         this.promocionServicio = promocionServicio;
     }
 

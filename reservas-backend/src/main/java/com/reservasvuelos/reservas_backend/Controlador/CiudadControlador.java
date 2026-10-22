@@ -2,7 +2,6 @@ package com.reservasvuelos.reservas_backend.Controlador;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,7 +13,6 @@ import com.reservasvuelos.reservas_backend.servicios.CiudadServicio;
 @RestController
 @RequestMapping("/ciudades")
 public class CiudadControlador {
-    @Autowired 
     private final CiudadServicio ciudadServicio;
     
     public CiudadControlador(CiudadServicio ciudadServicio) {
@@ -22,7 +20,7 @@ public class CiudadControlador {
     }
     
     @GetMapping 
-    private ResponseEntity<List<Ciudad>> getAllCiudades() {
+    public ResponseEntity<List<Ciudad>> getAllCiudades() {
         return ResponseEntity.ok(ciudadServicio.findAll());
     }
     
