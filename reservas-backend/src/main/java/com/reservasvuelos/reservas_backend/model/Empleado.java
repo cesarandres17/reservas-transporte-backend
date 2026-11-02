@@ -4,46 +4,34 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import com.reservasvuelos.reservas_backend.model.enums.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+// Subtipo de Usuario: codEmpleado es el mismo codUsuario.
 @Entity
 @Table(name = "empleado")
 @Getter
 @Setter
 @NoArgsConstructor
 public class Empleado {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long codEmpleado;
 
-    @NotBlank
-    @Size(max = 20)
-    @Column(length = 20, nullable = false, unique = true)
-    private String numeroDocumento;
-
-    @NotBlank
-    @Size(max = 80)
-    @Column(length = 80, nullable = false)
-    private String nombres;
-
-    @NotBlank
-    @Size(max = 80)
-    @Column(length = 80, nullable = false)
-    private String apellidos;
+    @NotNull
+    @ToString.Exclude
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @MapsId
+    @JoinColumn(name = "cod_empleado")
+    private Usuario usuario;
 
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private CargoEmpleado cargo;
-
-    @Email
-    @Size(max = 120)
-    @Column(length = 120)
-    private String email;
+    @ToString.Exclude
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "cod_cargo", nullable = false)
+    private Cargo cargo;
 
     @NotNull
     @PositiveOrZero

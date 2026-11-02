@@ -1,7 +1,6 @@
 package com.reservasvuelos.reservas_backend.model;
 
 import com.reservasvuelos.reservas_backend.model.enums.CanalReserva;
-import com.reservasvuelos.reservas_backend.model.enums.EstadoReserva;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
@@ -39,8 +38,9 @@ public class Reserva {
     private CanalReserva canal;
 
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 12)
+    @ToString.Exclude
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "cod_estado_reserva", nullable = false)
     private EstadoReserva estado;
 
     @NotNull
@@ -63,6 +63,12 @@ public class Reserva {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "cod_cliente", nullable = false)
     private Cliente cliente;
+
+    // Opcional: empleado que la vendio en taquilla o agencia.
+    @ToString.Exclude
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cod_empleado")
+    private Empleado empleado;
 
     // Opcional: no todas las reservas usan promocion.
     @ToString.Exclude

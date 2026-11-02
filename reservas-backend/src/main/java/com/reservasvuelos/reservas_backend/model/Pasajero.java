@@ -10,7 +10,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Entity
-@Table(name = "pasajero", uniqueConstraints = @UniqueConstraint(columnNames = {"tipo_documento", "numero_documento"}))
+@Table(name = "pasajero", uniqueConstraints = @UniqueConstraint(columnNames = {"cod_tipo_documento", "numero_documento"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,10 +19,11 @@ public class Pasajero {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long codPasajero;
 
-    @NotBlank
-    @Size(max = 3)
-    @Column(length = 3, nullable = false)
-    private String tipoDocumento;
+    @NotNull
+    @ToString.Exclude
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "cod_tipo_documento", nullable = false)
+    private TipoDocumento tipoDocumento;
 
     @NotBlank
     @Size(max = 20)
@@ -30,14 +31,22 @@ public class Pasajero {
     private String numeroDocumento;
 
     @NotBlank
-    @Size(max = 80)
-    @Column(length = 80, nullable = false)
-    private String nombres;
+    @Size(max = 40)
+    @Column(length = 40, nullable = false)
+    private String primerNombre;
+
+    @Size(max = 40)
+    @Column(length = 40)
+    private String segundoNombre;
 
     @NotBlank
-    @Size(max = 80)
-    @Column(length = 80, nullable = false)
-    private String apellidos;
+    @Size(max = 40)
+    @Column(length = 40, nullable = false)
+    private String primerApellido;
+
+    @Size(max = 40)
+    @Column(length = 40)
+    private String segundoApellido;
 
     @NotNull
     @Past

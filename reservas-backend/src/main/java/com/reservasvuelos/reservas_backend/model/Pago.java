@@ -1,6 +1,5 @@
 package com.reservasvuelos.reservas_backend.model;
 
-import com.reservasvuelos.reservas_backend.model.enums.EstadoPago;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
@@ -29,19 +28,19 @@ public class Pago {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal monto;
 
-    @NotNull
+    // Opcional: solo aplica a tarjeta de credito.
     @Positive
-    @Column(nullable = false)
     private Integer cuotas;
 
-    @NotBlank
+    // Opcional: un pago en efectivo no tiene referencia.
     @Size(max = 40)
-    @Column(length = 40, nullable = false, unique = true)
+    @Column(length = 40, unique = true)
     private String referenciaTransaccion;
 
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 12)
+    @ToString.Exclude
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "cod_estado_pago", nullable = false)
     private EstadoPago estado;
 
     @NotNull

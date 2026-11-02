@@ -1,6 +1,5 @@
 package com.reservasvuelos.reservas_backend.model;
 
-import com.reservasvuelos.reservas_backend.model.enums.EstadoTiquete;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
@@ -40,9 +39,17 @@ public class Tiquete {
     private LocalDateTime fechaEmision;
 
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 12)
+    @ToString.Exclude
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "cod_estado_tiquete", nullable = false)
     private EstadoTiquete estado;
+
+    // Ida, regreso o escala dentro de la reserva.
+    @NotNull
+    @ToString.Exclude
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "cod_tipo_trayecto", nullable = false)
+    private TipoTrayecto tipoTrayecto;
 
     @NotNull
     @ToString.Exclude

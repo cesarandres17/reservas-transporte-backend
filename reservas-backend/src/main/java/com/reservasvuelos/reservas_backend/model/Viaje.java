@@ -3,7 +3,6 @@ package com.reservasvuelos.reservas_backend.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
-import com.reservasvuelos.reservas_backend.model.enums.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -37,8 +36,9 @@ public class Viaje {
     private String puertaAnden;
 
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 12)
+    @ToString.Exclude
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "cod_estado_viaje", nullable = false)
     private EstadoViaje estado;
 
     @NotNull
