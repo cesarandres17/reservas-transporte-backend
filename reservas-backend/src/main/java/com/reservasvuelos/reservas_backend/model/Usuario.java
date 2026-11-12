@@ -1,6 +1,8 @@
 package com.reservasvuelos.reservas_backend.model;
 
 import com.reservasvuelos.reservas_backend.model.enums.EstadoUsuario;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.time.LocalDate;
@@ -9,8 +11,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-// Datos personales y de acceso de toda persona del sistema.
-// Cliente y Empleado son subtipos: comparten esta misma llave.
 @Entity
 @Table(name = "usuario", uniqueConstraints = @UniqueConstraint(columnNames = {"cod_tipo_documento", "numero_documento"}))
 @Getter
@@ -51,14 +51,13 @@ public class Usuario {
     @Column(length = 40)
     private String segundoApellido;
 
-    // Con el email se inicia sesion.
     @Email
     @NotBlank
     @Size(max = 120)
     @Column(length = 120, nullable = false, unique = true)
     private String email;
 
-    // Guarda el hash BCrypt (60 caracteres), nunca la clave en texto plano.
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @NotBlank
     @Size(max = 100)
     @Column(length = 100, nullable = false)
