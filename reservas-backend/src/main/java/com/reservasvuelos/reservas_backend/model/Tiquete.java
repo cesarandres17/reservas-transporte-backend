@@ -11,7 +11,6 @@ import lombok.ToString;
 
 @Entity
 @Table(name = "tiquete", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"cod_viaje", "cod_pasajero"}),
         @UniqueConstraint(columnNames = {"cod_viaje", "cod_vehiculo", "numero_asiento"})
 })
 @Getter
@@ -76,4 +75,4 @@ public class Tiquete {
             @JoinColumn(name = "numero_asiento", referencedColumnName = "numeroAsiento")
     })
     private Asiento asiento;
-}
+}

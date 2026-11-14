@@ -23,6 +23,7 @@ public interface TiqueteRepositorio extends JpaRepository<Tiquete, Long> {
     @Query("""
             select count(t) > 0 from Tiquete t
             where t.tarifa.viaje.codViaje = :codViaje and t.pasajero.codPasajero = :codPasajero
+              and t.estado.nombre in ('EMITIDO', 'USADO')
             """)
     boolean pasajeroEnViaje(Long codViaje, Long codPasajero);
 
