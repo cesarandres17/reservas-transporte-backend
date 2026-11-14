@@ -13,12 +13,17 @@ public final class Formatos {
 
     private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter FECHA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final DateTimeFormatter HORA = DateTimeFormatter.ofPattern("HH:mm");
     private static final DateTimeFormatter CUANDO = DateTimeFormatter.ofPattern("dd/MM/yyyy 'a las' HH:mm");
     private static final Map<String, String> NOMBRES = Map.ofEntries(
             Map.entry("ECONOMICA", "Económica"),
             Map.entry("APP_MOVIL", "App móvil"),
             Map.entry("AEREO", "Aéreo"),
-            Map.entry("EMITIDO", "Emitido"));
+            Map.entry("EMITIDO", "Emitido"),
+            Map.entry("MANO", "De mano"),
+            Map.entry("BODEGA", "De bodega"),
+            Map.entry("ESPECIAL", "Especial"),
+            Map.entry("NINO", "Niño"));
 
     private Formatos() {
     }
@@ -40,6 +45,14 @@ public final class Formatos {
 
     public static String fechaHora(LocalDateTime fechaHora) {
         return fechaHora.format(FECHA_HORA);
+    }
+
+    public static String hora(LocalDateTime fechaHora) {
+        return fechaHora.format(HORA);
+    }
+
+    public static String peso(BigDecimal kilos) {
+        return kilos.stripTrailingZeros().toPlainString().replace('.', ',') + " kg";
     }
 
     public static String cuando(LocalDateTime fechaHora) {

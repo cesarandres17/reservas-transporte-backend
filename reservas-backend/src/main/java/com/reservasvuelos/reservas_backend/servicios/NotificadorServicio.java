@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -34,6 +35,7 @@ import com.reservasvuelos.reservas_backend.model.Promocion;
 import com.reservasvuelos.reservas_backend.model.Reserva;
 import com.reservasvuelos.reservas_backend.model.Tiquete;
 import com.reservasvuelos.reservas_backend.model.Viaje;
+import com.reservasvuelos.reservas_backend.servicios.AvisoCreado.Adjunto;
 
 @Service
 public class NotificadorServicio {
@@ -45,8 +47,9 @@ public class NotificadorServicio {
     public static final String RESERVA_PENDIENTE = "RESERVA_PENDIENTE";
     public static final String RESERVA_CANCELADA = "RESERVA_CANCELADA";
     public static final String RESERVA_VENCIDA = "RESERVA_VENCIDA";
+    public static final String CHECKIN = "CHECKIN";
     public static final List<String> TIPOS = List.of(RECORDATORIO_VIAJE, PROMOCION, CAMBIO_VIAJE, CONFIRMACION_PAGO,
-            RESERVA_PENDIENTE, RESERVA_CANCELADA, RESERVA_VENCIDA);
+            RESERVA_PENDIENTE, RESERVA_CANCELADA, RESERVA_VENCIDA, CHECKIN);
     public static final List<String> ESTADOS = List.of("PENDIENTE", "ENVIADA", "LEIDA", "FALLIDA");
 
     private static final int HORAS_RECORDATORIO_POR_DEFECTO = 24;
@@ -82,7 +85,8 @@ public class NotificadorServicio {
                 + Formatos.cuando(viaje.getFechaHoraSalida()) + "."
                 + (factura == null ? "" : " Te adjuntamos la factura " + factura.getNumeroFactura() + ".");
         crear(CONFIRMACION_PAGO, "Pago confirmado de la reserva " + reserva.getCodigoReserva(), mensaje, viaje, null,
-                List.of(reserva.getCliente()), reserva.getCodReserva(), factura != null);
+                List.of(reserva.getCliente()), reserva.getCodReserva(),
+                factura == null ? Adjunto.NINGUNO : Adjunto.FACTURA);
     }
 
     public void reservaPendiente(Reserva reserva) {
@@ -93,7 +97,7 @@ public class NotificadorServicio {
                 + Formatos.dinero(reserva.getTotal()) + ". Págala antes del "
                 + Formatos.cuando(reserva.getFechaLimitePago()) + " o la reserva se libera.";
         crear(RESERVA_PENDIENTE, "Reserva " + reserva.getCodigoReserva() + " pendiente de pago", mensaje, viaje, null,
-                List.of(reserva.getCliente()), reserva.getCodReserva(), false);
+                List.of(reserva.getCliente()), reserva.getCodReserva(), Adjunto.NINGUNO);
     }
 
     public void reservaCancelada(Reserva reserva, boolean reembolso) {
@@ -103,7 +107,7 @@ public class NotificadorServicio {
                 + (reembolso ? " Te devolvemos " + Formatos.dinero(reserva.getTotal()) + " al mismo medio de pago."
                         : " Como la reserva no estaba pagada, no se hizo ningún cobro.");
         crear(RESERVA_CANCELADA, "Reserva " + reserva.getCodigoReserva() + " cancelada", mensaje, viaje, null,
-                List.of(reserva.getCliente()), reserva.getCodReserva(), false);
+                List.of(reserva.getCliente()), reserva.getCodReserva(), Adjunto.NINGUNO);
     }
 
     public void reservaVencida(Reserva reserva) {
@@ -112,7 +116,22 @@ public class NotificadorServicio {
                 + " venció porque no se pagó antes del " + Formatos.cuando(reserva.getFechaLimitePago())
                 + ". Los cupos quedaron libres. Si todavía quieres viajar, haz una nueva compra.";
         crear(RESERVA_VENCIDA, "Reserva " + reserva.getCodigoReserva() + " vencida", mensaje, viaje, null,
-                List.of(reserva.getCliente()), reserva.getCodReserva(), false);
+                List.of(reserva.getCliente()), reserva.getCodReserva(), Adjunto.NINGUNO);
+    }
+
+    public void checkinRealizado(Reserva reserva, Viaje viaje, List<Tiquete> tiquetes) {
+        String pasajeros = tiquetes.stream()
+                .map(tiquete -> tiquete.getPasajero().getPrimerNombre() + " " + tiquete.getPasajero().getPrimerApellido()
+                        + (tiquete.getAsiento() == null ? "" : " (silla " + tiquete.getAsiento().getNumeroAsiento() + ")"))
+                .collect(Collectors.joining(", "));
+        String lugar = viaje.getPuertaAnden() == null ? "" : " por " + lugar(viaje.getPuertaAnden());
+        String mensaje = "Hiciste el check-in de " + pasajeros + " en el viaje " + descripcion(viaje) + " del "
+                + Formatos.cuando(viaje.getFechaHoraSalida()) + ". El abordaje empieza a las "
+                + Formatos.hora(ReglasAbordaje.inicioAbordaje(viaje)) + lugar + " y se cierra a las "
+                + Formatos.hora(ReglasAbordaje.cierrePuerta(viaje)) + ". "
+                + (tiquetes.size() == 1 ? "Te adjuntamos el pase de abordar." : "Te adjuntamos los pases de abordar.");
+        crear(CHECKIN, "Check-in listo para el viaje " + viaje.getCodigoViaje(), mensaje, viaje, null,
+                List.of(reserva.getCliente()), reserva.getCodReserva(), Adjunto.PASES_ABORDAR);
     }
 
     public void cambioViaje(Viaje viaje, String estadoAnterior, LocalDateTime salidaAnterior, String puertaAnterior) {
@@ -130,7 +149,7 @@ public class NotificadorServicio {
                     + Formatos.cuando(salidaAnterior) + ").");
         }
         if (viaje.getPuertaAnden() != null && !Objects.equals(viaje.getPuertaAnden(), puertaAnterior)) {
-            cambios.add("Ahora sale por " + viaje.getPuertaAnden() + ".");
+            cambios.add("Ahora sale por " + lugar(viaje.getPuertaAnden()) + ".");
         }
         if (!cancelado && cambios.isEmpty()) {
             return;
@@ -143,10 +162,10 @@ public class NotificadorServicio {
             crear(CAMBIO_VIAJE, "Viaje " + viaje.getCodigoViaje() + " cancelado", "La empresa canceló el viaje "
                     + descripcion(viaje) + " del " + Formatos.cuando(viaje.getFechaHoraSalida())
                     + ". Puedes cancelar tu reserva desde Mis reservas y te devolvemos el valor pagado.", viaje, null,
-                    clientes, null, false);
+                    clientes, null, Adjunto.NINGUNO);
         } else {
             crear(CAMBIO_VIAJE, "Cambio en tu viaje " + viaje.getCodigoViaje(), "Hay cambios en tu viaje "
-                    + descripcion(viaje) + ". " + String.join(" ", cambios), viaje, null, clientes, null, false);
+                    + descripcion(viaje) + ". " + String.join(" ", cambios), viaje, null, clientes, null, Adjunto.NINGUNO);
         }
     }
 
@@ -157,7 +176,7 @@ public class NotificadorServicio {
         LocalDateTime ahora = LocalDateTime.now();
         notificacionRepositorio.programadasPorEnviar(ahora.minusDays(1), ahora.minusMinutes(MINUTOS_DE_ESPERA))
                 .forEach(notificacion -> eventos.publishEvent(
-                        new AvisoCreado(notificacion.getCodNotificacion(), null, false)));
+                        new AvisoCreado(notificacion.getCodNotificacion(), null, Adjunto.NINGUNO)));
         Map<String, List<Tiquete>> grupos = tiqueteRepositorio
                 .pagadosPorSalir(CompraServicio.ESTADOS_VENTA, ahora, ahora.plusHours(MAXIMO_HORAS_RECORDATORIO))
                 .stream()
@@ -189,7 +208,7 @@ public class NotificadorServicio {
                     + ". Llega con " + (terrestre ? "30 minutos" : "2 horas")
                     + " de anticipación y lleva tu documento de identidad.";
             crear(RECORDATORIO_VIAJE, "Tu viaje " + viaje.getCodigoViaje() + " sale pronto", mensaje, viaje, null,
-                    List.of(cliente), primero.getReserva().getCodReserva(), false);
+                    List.of(cliente), primero.getReserva().getCodReserva(), Adjunto.NINGUNO);
             creados++;
         }
         if (creados > 0) {
@@ -217,12 +236,12 @@ public class NotificadorServicio {
                 + porcentaje + " de descuento. Válida del " + Formatos.fecha(promocion.getFechaInicio()) + " al "
                 + Formatos.fecha(promocion.getFechaFin()) + ".";
         Notificacion notificacion = crear(PROMOCION, "Promoción " + promocion.getCodigo() + ": " + porcentaje
-                + " de descuento", mensaje, null, promocion, clientes, null, false);
+                + " de descuento", mensaje, null, promocion, clientes, null, Adjunto.NINGUNO);
         return new EnvioPromocionDTO(notificacion.getCodNotificacion(), promocion.getCodigo(), clientes.size());
     }
 
     private Notificacion crear(String tipo, String titulo, String mensaje, Viaje viaje, Promocion promocion,
-            Collection<Cliente> clientes, Long codReserva, boolean adjuntarFactura) {
+            Collection<Cliente> clientes, Long codReserva, Adjunto adjunto) {
         Notificacion notificacion = new Notificacion();
         notificacion.setTitulo(Formatos.recortar(titulo, 80));
         notificacion.setMensaje(Formatos.recortar(mensaje, 500));
@@ -242,13 +261,25 @@ public class NotificadorServicio {
             destinatarios.add(destinatario);
         }
         clienteNotificacionRepositorio.saveAll(destinatarios);
-        eventos.publishEvent(new AvisoCreado(notificacion.getCodNotificacion(), codReserva, adjuntarFactura));
+        eventos.publishEvent(new AvisoCreado(notificacion.getCodNotificacion(), codReserva, adjunto));
         return notificacion;
     }
 
     private Viaje viaje(Reserva reserva) {
         return tiqueteRepositorio.findByReserva_CodReservaOrderByCodTiquete(reserva.getCodReserva()).get(0)
                 .getTarifa().getViaje();
+    }
+
+    private static String lugar(String puertaAnden) {
+        String texto = puertaAnden.trim();
+        String minuscula = texto.toLowerCase(Locale.ROOT);
+        if (minuscula.startsWith("puerta")) {
+            return "la " + minuscula;
+        }
+        if (minuscula.startsWith("andén") || minuscula.startsWith("anden")) {
+            return "el " + minuscula;
+        }
+        return texto;
     }
 
     private static String descripcion(Viaje viaje) {

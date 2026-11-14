@@ -20,6 +20,7 @@ import com.reservasvuelos.reservas_backend.model.Promocion;
 import com.reservasvuelos.reservas_backend.model.Reserva;
 import com.reservasvuelos.reservas_backend.model.Tiquete;
 import com.reservasvuelos.reservas_backend.model.Viaje;
+import com.reservasvuelos.reservas_backend.servicios.AvisoCreado.Adjunto;
 
 @Component
 public class PlantillaCorreo {
@@ -29,24 +30,26 @@ public class PlantillaCorreo {
     private final PagoRepositorio pagoRepositorio;
     private final FacturaRepositorio facturaRepositorio;
     private final DocumentoPdfServicio documentoPdfServicio;
+    private final PaseAbordarPdf paseAbordarPdf;
     private final String empresa;
 
     public PlantillaCorreo(ReservaRepositorio reservaRepositorio, TiqueteRepositorio tiqueteRepositorio,
             PagoRepositorio pagoRepositorio, FacturaRepositorio facturaRepositorio,
-            DocumentoPdfServicio documentoPdfServicio,
+            DocumentoPdfServicio documentoPdfServicio, PaseAbordarPdf paseAbordarPdf,
             @Value("${app.empresa.nombre:Reservas de Transporte S.A.S.}") String empresa) {
         this.reservaRepositorio = reservaRepositorio;
         this.tiqueteRepositorio = tiqueteRepositorio;
         this.pagoRepositorio = pagoRepositorio;
         this.facturaRepositorio = facturaRepositorio;
         this.documentoPdfServicio = documentoPdfServicio;
+        this.paseAbordarPdf = paseAbordarPdf;
         this.empresa = empresa;
     }
 
     public record ContenidoCorreo(String asunto, String html, String texto, String nombreAdjunto, byte[] adjunto) {
     }
 
-    public ContenidoCorreo contenido(Notificacion notificacion, Long codReserva, boolean adjuntarFactura,
+    public ContenidoCorreo contenido(Notificacion notificacion, Long codReserva, Adjunto tipoAdjunto,
             String nombreCliente, String avisoPrueba) {
         Map<String, String> datos = new LinkedHashMap<>();
         List<String[]> tiquetes = new ArrayList<>();
@@ -85,11 +88,20 @@ public class PlantillaCorreo {
                         tiquete.getNumeroTiquete(),
                         Formatos.legible(tiquete.getEstado().getNombre())});
             }
-            Factura factura = adjuntarFactura ? facturaRepositorio.findById(codReserva).orElse(null) : null;
+            Factura factura = tipoAdjunto == Adjunto.FACTURA ? facturaRepositorio.findById(codReserva).orElse(null)
+                    : null;
             if (factura != null) {
                 adjunto = documentoPdfServicio.factura(factura, lista,
                         pagoRepositorio.findByReserva_CodReservaOrderByFechaPago(codReserva));
                 nombreAdjunto = "factura-" + factura.getNumeroFactura() + ".pdf";
+            }
+            if (tipoAdjunto == Adjunto.PASES_ABORDAR) {
+                adjunto = paseAbordarPdf.deReserva(codReserva);
+                nombreAdjunto = adjunto == null ? null : "pases-abordar-" + reserva.getCodigoReserva() + ".pdf";
+                if (viaje != null) {
+                    datos.put("Abordaje", Formatos.hora(ReglasAbordaje.inicioAbordaje(viaje)) + " a "
+                            + Formatos.hora(ReglasAbordaje.cierrePuerta(viaje)));
+                }
             }
         }
         Promocion promocion = notificacion.getPromocion();

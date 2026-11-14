@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.reservasvuelos.reservas_backend.Repositorio.UsuarioRepositorio;
+import com.reservasvuelos.reservas_backend.model.Reserva;
 import com.reservasvuelos.reservas_backend.model.Usuario;
 
 @Component
@@ -31,6 +32,11 @@ public class UsuarioActual {
     public Usuario obtener(Authentication autenticacion) {
         return buscar(autenticacion).orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Inicia sesión para continuar"));
+    }
+
+    public boolean puedeGestionar(Reserva reserva, Authentication autenticacion) {
+        return esPersonal(autenticacion)
+                || reserva.getCliente().getUsuario().getEmail().equalsIgnoreCase(autenticacion.getName());
     }
 
     public boolean esPersonal(Authentication autenticacion) {

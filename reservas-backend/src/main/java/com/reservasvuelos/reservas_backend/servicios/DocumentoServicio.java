@@ -9,10 +9,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.reservasvuelos.reservas_backend.Repositorio.EquipajeRepositorio;
 import com.reservasvuelos.reservas_backend.Repositorio.FacturaRepositorio;
 import com.reservasvuelos.reservas_backend.Repositorio.PagoRepositorio;
 import com.reservasvuelos.reservas_backend.Repositorio.TiqueteRepositorio;
 import com.reservasvuelos.reservas_backend.dto.DocumentoPdf;
+import com.reservasvuelos.reservas_backend.model.Equipaje;
 import com.reservasvuelos.reservas_backend.model.Factura;
 import com.reservasvuelos.reservas_backend.model.Pago;
 import com.reservasvuelos.reservas_backend.model.Reserva;
@@ -24,13 +26,16 @@ public class DocumentoServicio {
     private final FacturaRepositorio facturaRepositorio;
     private final PagoRepositorio pagoRepositorio;
     private final TiqueteRepositorio tiqueteRepositorio;
+    private final EquipajeRepositorio equipajeRepositorio;
     private final DocumentoPdfServicio documentoPdfServicio;
 
     public DocumentoServicio(FacturaRepositorio facturaRepositorio, PagoRepositorio pagoRepositorio,
-            TiqueteRepositorio tiqueteRepositorio, DocumentoPdfServicio documentoPdfServicio) {
+            TiqueteRepositorio tiqueteRepositorio, EquipajeRepositorio equipajeRepositorio,
+            DocumentoPdfServicio documentoPdfServicio) {
         this.facturaRepositorio = facturaRepositorio;
         this.pagoRepositorio = pagoRepositorio;
         this.tiqueteRepositorio = tiqueteRepositorio;
+        this.equipajeRepositorio = equipajeRepositorio;
         this.documentoPdfServicio = documentoPdfServicio;
     }
 
@@ -54,7 +59,13 @@ public class DocumentoServicio {
         validarAcceso(reserva, autenticacion);
         List<Tiquete> tiquetes = tiqueteRepositorio.findByReserva_CodReservaOrderByCodTiquete(reserva.getCodReserva());
         Factura factura = facturaRepositorio.findById(reserva.getCodReserva()).orElse(null);
-        byte[] contenido = documentoPdfServicio.comprobante(pago, tiquetes, factura);
+        List<Equipaje> piezas = CobroServicio.piezasPagadas(pago)
+                .map(pagadas -> equipajeRepositorio.findByTiquete_CodTiqueteOrderByNumeroPieza(pagadas.codTiquete())
+                        .stream()
+                        .filter(pieza -> pagadas.incluye(pieza.getNumeroPieza()))
+                        .toList())
+                .orElse(null);
+        byte[] contenido = documentoPdfServicio.comprobante(pago, tiquetes, factura, piezas);
         return new DocumentoPdf(String.format("comprobante-pago-%06d.pdf", codPago), contenido);
     }
 

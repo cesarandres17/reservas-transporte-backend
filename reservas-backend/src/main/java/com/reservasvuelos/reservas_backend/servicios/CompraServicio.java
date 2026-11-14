@@ -28,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.reservasvuelos.reservas_backend.Repositorio.AsientoRepositorio;
+import com.reservasvuelos.reservas_backend.Repositorio.CheckinRepositorio;
 import com.reservasvuelos.reservas_backend.Repositorio.ClienteRepositorio;
 import com.reservasvuelos.reservas_backend.Repositorio.EmpleadoRepositorio;
 import com.reservasvuelos.reservas_backend.Repositorio.FacturaRepositorio;
@@ -77,6 +78,7 @@ public class CompraServicio {
     private final TarifaRepositorio tarifaRepositorio;
     private final AsientoRepositorio asientoRepositorio;
     private final TiqueteRepositorio tiqueteRepositorio;
+    private final CheckinRepositorio checkinRepositorio;
     private final ReservaRepositorio reservaRepositorio;
     private final PagoRepositorio pagoRepositorio;
     private final FacturaRepositorio facturaRepositorio;
@@ -91,7 +93,8 @@ public class CompraServicio {
     private final SecureRandom aleatorio = new SecureRandom();
 
     public CompraServicio(TarifaRepositorio tarifaRepositorio, AsientoRepositorio asientoRepositorio,
-            TiqueteRepositorio tiqueteRepositorio, ReservaRepositorio reservaRepositorio,
+            TiqueteRepositorio tiqueteRepositorio, CheckinRepositorio checkinRepositorio,
+            ReservaRepositorio reservaRepositorio,
             PagoRepositorio pagoRepositorio, FacturaRepositorio facturaRepositorio,
             PromocionRepositorio promocionRepositorio, ClienteRepositorio clienteRepositorio,
             EmpleadoRepositorio empleadoRepositorio, PasajeroCompraServicio pasajeroCompraServicio,
@@ -100,6 +103,7 @@ public class CompraServicio {
         this.tarifaRepositorio = tarifaRepositorio;
         this.asientoRepositorio = asientoRepositorio;
         this.tiqueteRepositorio = tiqueteRepositorio;
+        this.checkinRepositorio = checkinRepositorio;
         this.reservaRepositorio = reservaRepositorio;
         this.pagoRepositorio = pagoRepositorio;
         this.facturaRepositorio = facturaRepositorio;
@@ -236,6 +240,11 @@ public class CompraServicio {
                 .anyMatch(tiquete -> !tiquete.getTarifa().getViaje().getFechaHoraSalida().isAfter(ahora))) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "El viaje ya salió, así que la reserva " + reserva.getCodigoReserva() + " no se puede cancelar");
+        }
+
+        if (!viajeCancelado && checkinRepositorio.existsByTiquete_Reserva_CodReserva(reserva.getCodReserva())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "La reserva " + reserva.getCodigoReserva() + " ya tiene check-in, así que no se puede cancelar");
         }
 
         boolean pagada = estado.equals("PAGADA");

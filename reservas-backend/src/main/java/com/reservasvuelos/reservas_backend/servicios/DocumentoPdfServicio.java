@@ -31,6 +31,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.reservasvuelos.reservas_backend.model.Asiento;
+import com.reservasvuelos.reservas_backend.model.Equipaje;
 import com.reservasvuelos.reservas_backend.model.Factura;
 import com.reservasvuelos.reservas_backend.model.Pago;
 import com.reservasvuelos.reservas_backend.model.Pasajero;
@@ -228,7 +229,7 @@ public class DocumentoPdfServicio {
         return salida.toByteArray();
     }
 
-    public byte[] comprobante(Pago pago, List<Tiquete> tiquetes, Factura factura) {
+    public byte[] comprobante(Pago pago, List<Tiquete> tiquetes, Factura factura, List<Equipaje> piezas) {
         Reserva reserva = pago.getReserva();
         String numero = String.format("CP-%06d", pago.getCodPago());
         String estado = pago.getEstado().getNombre();
@@ -291,15 +292,45 @@ public class DocumentoPdfServicio {
         }
         filaDato(detalle, "Referencia de la transacción", texto(pago.getReferenciaTransaccion()));
         filaDato(detalle, "Código de reserva", reserva.getCodigoReserva());
-        filaDato(detalle, "Factura", factura == null ? "Sin factura emitida" : factura.getNumeroFactura());
-        filaDato(detalle, "Total de la reserva", dinero(reserva.getTotal()));
+        if (piezas == null) {
+            filaDato(detalle, "Factura", factura == null ? "Sin factura emitida" : factura.getNumeroFactura());
+            filaDato(detalle, "Total de la reserva", dinero(reserva.getTotal()));
+        } else {
+            filaDato(detalle, "Concepto", "Equipaje adicional");
+        }
         filaDato(detalle, "Cliente", nombre(cliente));
         filaDato(detalle, "Documento", cliente.getTipoDocumento().getSigla() + " " + cliente.getNumeroDocumento());
         filaDato(detalle, "Correo", cliente.getEmail());
         documento.add(detalle);
 
         documento.add(subtitulo("Concepto"));
-        if (tiquetes.isEmpty()) {
+        if (piezas != null) {
+            Tiquete tiquete = piezas.isEmpty() ? null : piezas.get(0).getTiquete();
+            if (tiquete != null) {
+                Viaje viaje = tiquete.getTarifa().getViaje();
+                documento.add(parrafo("Equipaje de " + nombre(tiquete.getPasajero()) + ", tiquete "
+                        + tiquete.getNumeroTiquete() + ", viaje " + viaje.getCodigoViaje() + "  " + trayecto(viaje.getRuta())
+                        + " del " + FECHA_HORA.format(viaje.getFechaHoraSalida()) + ".",
+                        fuente(9, Font.NORMAL, TEXTO), 0));
+            }
+            PdfPTable tablaPiezas = new PdfPTable(new float[] {25, 25, 25, 25});
+            tablaPiezas.setWidthPercentage(100);
+            tablaPiezas.setSpacingBefore(8);
+            tablaPiezas.setHeaderRows(1);
+            String[] titulos = {"Etiqueta", "Tipo", "Peso", "Valor"};
+            for (int i = 0; i < titulos.length; i++) {
+                tablaPiezas.addCell(celdaEncabezado(titulos[i], i >= 2 ? Element.ALIGN_RIGHT : Element.ALIGN_LEFT));
+            }
+            int fila = 0;
+            for (Equipaje pieza : piezas) {
+                Color fondo = fila++ % 2 == 1 ? FONDO : Color.WHITE;
+                tablaPiezas.addCell(celdaDato(pieza.getCodigoEtiqueta(), Element.ALIGN_LEFT, fondo));
+                tablaPiezas.addCell(celdaDato(Formatos.legible(pieza.getTipo().name()), Element.ALIGN_LEFT, fondo));
+                tablaPiezas.addCell(celdaDato(Formatos.peso(pieza.getPesoKg()), Element.ALIGN_RIGHT, fondo));
+                tablaPiezas.addCell(celdaDato(dinero(pieza.getCostoAdicional()), Element.ALIGN_RIGHT, fondo));
+            }
+            documento.add(tablaPiezas);
+        } else if (tiquetes.isEmpty()) {
             documento.add(parrafo("La reserva no tiene tiquetes.", fuente(9, Font.ITALIC, TEXTO_SUAVE)));
         } else {
             PdfPTable concepto = new PdfPTable(new float[] {16, 26, 34, 24});

@@ -127,7 +127,7 @@ public class CorreoServicio {
         String nombre = destinatarios.size() == 1 ? destinatarios.get(0).nombre() : null;
         String avisoPrueba = redirigirA.isEmpty() ? null : "Correo de prueba: en uso real iría a "
                 + resumen(destinatarios) + ".";
-        ContenidoCorreo contenido = plantilla.contenido(notificacion, aviso.codReserva(), aviso.adjuntarFactura(),
+        ContenidoCorreo contenido = plantilla.contenido(notificacion, aviso.codReserva(), aviso.adjunto(),
                 nombre, avisoPrueba);
         return new Envio(contenido, destinatarios);
     }
