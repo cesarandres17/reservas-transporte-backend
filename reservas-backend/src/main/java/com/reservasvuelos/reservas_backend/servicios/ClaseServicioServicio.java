@@ -1,5 +1,4 @@
 package com.reservasvuelos.reservas_backend.servicios;
-import java.util.List;
 
 import org.springframework.stereotype.Service;
 
@@ -7,16 +6,14 @@ import com.reservasvuelos.reservas_backend.Repositorio.ClaseServicioRepositorio;
 import com.reservasvuelos.reservas_backend.model.ClaseServicio;
 
 @Service
-public class ClaseServicioServicio {
+public class ClaseServicioServicio extends CrudServicio<ClaseServicio, Long> {
 
-    private final ClaseServicioRepositorio claseServicioRepositorio;
-
-    public ClaseServicioServicio(ClaseServicioRepositorio claseServicioRepositorio) {
-        this.claseServicioRepositorio = claseServicioRepositorio;
+    public ClaseServicioServicio(ClaseServicioRepositorio repositorio) {
+        super(repositorio, "la clase de servicio");
     }
 
-    public List<ClaseServicio> findAll() {
-        return claseServicioRepositorio.findAll();
+    @Override
+    protected void asignarId(ClaseServicio claseServicio, Long id) {
+        claseServicio.setCodClase(id);
     }
-
 }

@@ -1,23 +1,19 @@
 package com.reservasvuelos.reservas_backend.servicios;
 
-import java.util.List;
-
 import org.springframework.stereotype.Service;
 
 import com.reservasvuelos.reservas_backend.Repositorio.PromocionRepositorio;
 import com.reservasvuelos.reservas_backend.model.Promocion;
 
 @Service
-public class PromocionServicio {
+public class PromocionServicio extends CrudServicio<Promocion, Long> {
 
-    private final PromocionRepositorio promocionRepositorio;
-
-    public PromocionServicio(PromocionRepositorio promocionRepositorio) {
-        this.promocionRepositorio = promocionRepositorio;
+    public PromocionServicio(PromocionRepositorio repositorio) {
+        super(repositorio, "la promoción");
     }
 
-    public List<Promocion> findAll() {
-        return promocionRepositorio.findAll();
+    @Override
+    protected void asignarId(Promocion promocion, Long id) {
+        promocion.setCodPromocion(id);
     }
-
 }

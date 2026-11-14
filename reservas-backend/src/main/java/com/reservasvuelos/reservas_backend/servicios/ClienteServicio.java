@@ -1,41 +1,39 @@
 package com.reservasvuelos.reservas_backend.servicios;
 
-import java.util.List;
-import java.util.Optional;
-
 import org.springframework.stereotype.Service;
 
 import com.reservasvuelos.reservas_backend.Repositorio.ClienteRepositorio;
+import com.reservasvuelos.reservas_backend.Repositorio.UsuarioRepositorio;
 import com.reservasvuelos.reservas_backend.model.Cliente;
+import com.reservasvuelos.reservas_backend.model.Usuario;
 
 @Service
-public class ClienteServicio {
-    private final ClienteRepositorio clienteRepositorio;
+public class ClienteServicio extends CrudServicio<Cliente, Long> {
 
+    private final UsuarioRepositorio usuarioRepositorio;
 
-    public ClienteServicio(ClienteRepositorio clienteRepositorio) {
-        this.clienteRepositorio = clienteRepositorio;
+    public ClienteServicio(ClienteRepositorio repositorio, UsuarioRepositorio usuarioRepositorio) {
+        super(repositorio, "el cliente");
+        this.usuarioRepositorio = usuarioRepositorio;
     }
 
-
-    public List<Cliente> findAll() {
-        return clienteRepositorio.findAll();
+    @Override
+    protected void asignarId(Cliente cliente, Long id) {
+        cliente.setCodCliente(id);
     }
 
-
-    public Optional<Cliente> findById(Long id) {
-        return clienteRepositorio.findById(id);
+    @Override
+    protected void completar(Cliente cliente, Cliente actual) {
+        if (actual != null) {
+            cliente.setUsuario(actual.getUsuario());
+        } else {
+            cliente.setUsuario(obligatorio(referencia(cliente.getUsuario(), Usuario::getCodUsuario,
+                    usuarioRepositorio, "el usuario"), "el usuario"));
+        }
     }
 
-
-    public Cliente save(Cliente cliente) {
-       return clienteRepositorio.save(cliente);
+    @Override
+    protected void validarNuevo(Cliente cliente) {
+        rechazarSiExiste(cliente.getUsuario().getCodUsuario());
     }
-
-
-    public void deleteById(Long id) {
-        clienteRepositorio.deleteById(id);
-    }
-
-
 }

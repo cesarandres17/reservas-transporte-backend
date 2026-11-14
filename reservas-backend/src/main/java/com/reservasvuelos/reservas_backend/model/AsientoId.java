@@ -4,6 +4,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.io.Serializable;
 
@@ -11,7 +12,8 @@ import java.io.Serializable;
 @Getter 
 @Setter 
 @NoArgsConstructor
-@EqualsAndHashCode  
+@EqualsAndHashCode
+@ToString
 public class AsientoId implements Serializable {
     private Long vehiculo;
     private String numeroAsiento;

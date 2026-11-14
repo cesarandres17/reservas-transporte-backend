@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import lombok.NoArgsConstructor;
 import lombok.EqualsAndHashCode;
 
@@ -11,6 +12,7 @@ import lombok.EqualsAndHashCode;
 @Setter 
 @NoArgsConstructor
 @EqualsAndHashCode
+@ToString
 
 public class TarifaId  implements Serializable {
     
