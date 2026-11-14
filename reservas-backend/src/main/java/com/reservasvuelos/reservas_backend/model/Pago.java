@@ -28,11 +28,9 @@ public class Pago {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal monto;
 
-    // Opcional: solo aplica a tarjeta de credito.
     @Positive
     private Integer cuotas;
 
-    // Opcional: un pago en efectivo no tiene referencia.
     @Size(max = 40)
     @Column(length = 40, unique = true)
     private String referenciaTransaccion;

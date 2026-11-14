@@ -62,7 +62,6 @@ public class Pasajero {
     @Column(nullable = false, length = 10)
     private TipoPasajero tipoPasajero;
 
-    // Nacionalidad del pasajero.
     @NotNull
     @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

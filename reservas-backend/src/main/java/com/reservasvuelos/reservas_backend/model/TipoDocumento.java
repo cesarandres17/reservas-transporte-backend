@@ -22,7 +22,6 @@ public class TipoDocumento {
     @Column(length = 30, nullable = false, unique = true)
     private String nombre;
 
-    // Abreviatura que se muestra en formularios: CC, CE, TI, PAS.
     @NotBlank
     @Size(max = 5)
     @Column(length = 5, nullable = false, unique = true)

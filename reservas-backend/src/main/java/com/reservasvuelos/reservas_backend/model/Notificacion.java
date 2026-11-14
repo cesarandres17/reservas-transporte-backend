@@ -39,13 +39,11 @@ public class Notificacion {
     @JoinColumn(name = "cod_tipo_notificacion", nullable = false)
     private TipoNotificacion tipoNotificacion;
 
-    // Opcional: solo cuando la notificacion anuncia una promocion.
     @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cod_promocion")
     private Promocion promocion;
 
-    // Opcional: solo cuando es un recordatorio o un cambio de un viaje.
     @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cod_viaje")

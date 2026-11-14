@@ -15,7 +15,6 @@ import lombok.ToString;
 @Setter
 @NoArgsConstructor
 public class Checkin {
-    // La llave es la misma del tiquete: cada tiquete tiene como maximo un check-in.
     @Id
     private Long codTiquete;
 
@@ -43,7 +42,6 @@ public class Checkin {
     @Column(length = 3)
     private String grupoAbordaje;
 
-    // Opcional: solo cuando el check-in se hace en mostrador.
     @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cod_empleado")

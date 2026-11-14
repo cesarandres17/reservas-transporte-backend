@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-// Subtipo de Usuario: codEmpleado es el mismo codUsuario.
 @Entity
 @Table(name = "empleado")
 @Getter

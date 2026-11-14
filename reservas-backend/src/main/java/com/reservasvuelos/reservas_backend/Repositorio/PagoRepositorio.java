@@ -9,4 +9,6 @@ import com.reservasvuelos.reservas_backend.model.Pago;
 public interface PagoRepositorio extends JpaRepository<Pago, Long> {
 
     List<Pago> findByReserva_CodReservaOrderByFechaPago(Long codReserva);
+
+    boolean existsByReferenciaTransaccion(String referenciaTransaccion);
 }

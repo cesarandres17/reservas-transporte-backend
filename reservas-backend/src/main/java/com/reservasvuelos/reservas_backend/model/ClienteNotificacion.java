@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-// A que clientes les llega cada notificacion, y en que estado esta para cada uno.
 @Entity
 @Table(name = "cliente_notificacion")
 @IdClass(ClienteNotificacionId.class)

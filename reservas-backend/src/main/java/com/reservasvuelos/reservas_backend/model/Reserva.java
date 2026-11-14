@@ -20,7 +20,6 @@ public class Reserva {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long codReserva;
 
-    // Codigo de 6 caracteres que ve el cliente, por ejemplo "X7K2PQ".
     @NotBlank
     @Size(max = 6)
     @Column(length = 6, nullable = false, unique = true)
@@ -64,13 +63,11 @@ public class Reserva {
     @JoinColumn(name = "cod_cliente", nullable = false)
     private Cliente cliente;
 
-    // Opcional: empleado que la vendio en taquilla o agencia.
     @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cod_empleado")
     private Empleado empleado;
 
-    // Opcional: no todas las reservas usan promocion.
     @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cod_promocion")

@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-// Subtipo de Usuario: codCliente es el mismo codUsuario.
 @Entity
 @Table(name = "cliente")
 @Getter
@@ -29,7 +28,6 @@ public class Cliente {
     @Column(nullable = false)
     private Boolean recibeNotificaciones = true;
 
-    // Cuantas horas antes del viaje se envia el recordatorio.
     @PositiveOrZero
     private Integer horasRecordatorio;
 }

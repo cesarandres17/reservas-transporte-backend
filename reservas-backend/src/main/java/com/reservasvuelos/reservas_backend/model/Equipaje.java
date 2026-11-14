@@ -23,7 +23,6 @@ public class Equipaje {
     @JoinColumn(name = "cod_tiquete")
     private Tiquete tiquete;
 
-    // 1, 2, 3... dentro del mismo tiquete.
     @Id
     @Positive
     private Integer numeroPieza;

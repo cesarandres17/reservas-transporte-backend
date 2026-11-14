@@ -11,9 +11,7 @@ import lombok.ToString;
 
 @Entity
 @Table(name = "tiquete", uniqueConstraints = {
-        // Un pasajero no puede tener dos tiquetes en el mismo viaje.
         @UniqueConstraint(columnNames = {"cod_viaje", "cod_pasajero"}),
-        // Un asiento no se puede vender dos veces en el mismo viaje.
         @UniqueConstraint(columnNames = {"cod_viaje", "cod_vehiculo", "numero_asiento"})
 })
 @Getter
@@ -44,7 +42,6 @@ public class Tiquete {
     @JoinColumn(name = "cod_estado_tiquete", nullable = false)
     private EstadoTiquete estado;
 
-    // Ida, regreso o escala dentro de la reserva.
     @NotNull
     @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -63,7 +60,6 @@ public class Tiquete {
     @JoinColumn(name = "cod_pasajero", nullable = false)
     private Pasajero pasajero;
 
-    // Tarifa tiene llave compuesta (viaje + clase), por eso la FK tiene dos columnas.
     @NotNull
     @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -73,7 +69,6 @@ public class Tiquete {
     })
     private Tarifa tarifa;
 
-    // Asiento tiene llave compuesta (vehiculo + numero). Es opcional: se puede asignar despues.
     @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumns({

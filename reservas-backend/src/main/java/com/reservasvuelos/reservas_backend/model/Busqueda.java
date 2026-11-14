@@ -39,7 +39,6 @@ public class Busqueda {
     @Column(nullable = false)
     private Integer resultados;
 
-    // Opcional: una persona puede buscar sin haber iniciado sesion.
     @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cod_cliente")

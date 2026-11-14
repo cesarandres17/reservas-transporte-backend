@@ -15,7 +15,6 @@ import lombok.ToString;
 @NoArgsConstructor
 public class Factura {
 
-    // La llave es la misma de la reserva: cada reserva tiene como maximo una factura.
     @Id
     private Long codReserva;
 
