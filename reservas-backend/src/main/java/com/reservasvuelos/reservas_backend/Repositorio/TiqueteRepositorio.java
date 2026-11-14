@@ -1,11 +1,14 @@
 package com.reservasvuelos.reservas_backend.Repositorio;
 
+import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import com.reservasvuelos.reservas_backend.model.Cliente;
 import com.reservasvuelos.reservas_backend.model.Tiquete;
 
 public interface TiqueteRepositorio extends JpaRepository<Tiquete, Long> {
@@ -22,4 +25,21 @@ public interface TiqueteRepositorio extends JpaRepository<Tiquete, Long> {
             where t.tarifa.viaje.codViaje = :codViaje and t.pasajero.codPasajero = :codPasajero
             """)
     boolean pasajeroEnViaje(Long codViaje, Long codPasajero);
+
+    @Query("""
+            select distinct r.cliente from Tiquete t join t.reserva r
+            where t.tarifa.viaje.codViaje = :codViaje and t.estado.nombre = 'EMITIDO'
+              and r.estado.nombre in ('PENDIENTE', 'CONFIRMADA', 'PAGADA')
+            """)
+    List<Cliente> clientesDelViaje(Long codViaje);
+
+    @Query("""
+            select t from Tiquete t
+            join fetch t.reserva r join fetch r.cliente c join fetch c.usuario
+            join fetch t.tarifa ta join fetch ta.viaje v
+            where t.estado.nombre = 'EMITIDO' and r.estado.nombre = 'PAGADA' and v.estado.nombre in :estados
+              and v.fechaHoraSalida > :desde and v.fechaHoraSalida <= :hasta
+            order by v.fechaHoraSalida, r.codReserva
+            """)
+    List<Tiquete> pagadosPorSalir(Collection<String> estados, LocalDateTime desde, LocalDateTime hasta);
 }

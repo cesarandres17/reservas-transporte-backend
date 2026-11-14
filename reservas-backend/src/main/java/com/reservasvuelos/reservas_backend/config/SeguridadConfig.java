@@ -46,7 +46,7 @@ public class SeguridadConfig {
                 .requestMatchers("/error").permitAll()
                 .requestMatchers(HttpMethod.POST, "/auth/registro").permitAll()
                 .requestMatchers(HttpMethod.GET, CONSULTA_PUBLICA).permitAll()
-                .requestMatchers("/auth/**", "/compras/**").authenticated()
+                .requestMatchers("/auth/**", "/compras/**", "/notificaciones/mias/**").authenticated()
                 .requestMatchers(HttpMethod.GET, "/facturas/*/pdf", "/pagos/*/comprobante").authenticated()
                 .requestMatchers(HttpMethod.DELETE).hasRole(ADMINISTRADOR)
                 .requestMatchers(SOLO_ADMINISTRADOR).hasRole(ADMINISTRADOR)

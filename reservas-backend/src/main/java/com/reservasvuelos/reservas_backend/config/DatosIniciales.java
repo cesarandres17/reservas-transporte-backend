@@ -10,14 +10,19 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.reservasvuelos.reservas_backend.Repositorio.EstadoNotificacionRepositorio;
 import com.reservasvuelos.reservas_backend.Repositorio.RolRepositorio;
 import com.reservasvuelos.reservas_backend.Repositorio.TipoDocumentoRepositorio;
+import com.reservasvuelos.reservas_backend.Repositorio.TipoNotificacionRepositorio;
 import com.reservasvuelos.reservas_backend.Repositorio.UsuarioRepositorio;
+import com.reservasvuelos.reservas_backend.model.EstadoNotificacion;
 import com.reservasvuelos.reservas_backend.model.Rol;
 import com.reservasvuelos.reservas_backend.model.TipoDocumento;
+import com.reservasvuelos.reservas_backend.model.TipoNotificacion;
 import com.reservasvuelos.reservas_backend.model.Usuario;
 import com.reservasvuelos.reservas_backend.model.enums.EstadoUsuario;
 import com.reservasvuelos.reservas_backend.servicios.AuthServicio;
+import com.reservasvuelos.reservas_backend.servicios.NotificadorServicio;
 
 @Component
 public class DatosIniciales implements CommandLineRunner {
@@ -27,6 +32,8 @@ public class DatosIniciales implements CommandLineRunner {
     private final RolRepositorio rolRepositorio;
     private final UsuarioRepositorio usuarioRepositorio;
     private final TipoDocumentoRepositorio tipoDocumentoRepositorio;
+    private final TipoNotificacionRepositorio tipoNotificacionRepositorio;
+    private final EstadoNotificacionRepositorio estadoNotificacionRepositorio;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${app.admin.email}")
@@ -36,10 +43,13 @@ public class DatosIniciales implements CommandLineRunner {
     private String passwordAdmin;
 
     public DatosIniciales(RolRepositorio rolRepositorio, UsuarioRepositorio usuarioRepositorio,
-            TipoDocumentoRepositorio tipoDocumentoRepositorio, PasswordEncoder passwordEncoder) {
+            TipoDocumentoRepositorio tipoDocumentoRepositorio, TipoNotificacionRepositorio tipoNotificacionRepositorio,
+            EstadoNotificacionRepositorio estadoNotificacionRepositorio, PasswordEncoder passwordEncoder) {
         this.rolRepositorio = rolRepositorio;
         this.usuarioRepositorio = usuarioRepositorio;
         this.tipoDocumentoRepositorio = tipoDocumentoRepositorio;
+        this.tipoNotificacionRepositorio = tipoNotificacionRepositorio;
+        this.estadoNotificacionRepositorio = estadoNotificacionRepositorio;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -52,6 +62,26 @@ public class DatosIniciales implements CommandLineRunner {
 
         if (!usuarioRepositorio.existsByRol_Nombre(AuthServicio.ROL_ADMINISTRADOR)) {
             crearAdministrador(administrador);
+        }
+        NotificadorServicio.TIPOS.forEach(this::crearTipoNotificacionSiNoExiste);
+        NotificadorServicio.ESTADOS.forEach(this::crearEstadoNotificacionSiNoExiste);
+    }
+
+    private void crearTipoNotificacionSiNoExiste(String nombre) {
+        if (tipoNotificacionRepositorio.findByNombre(nombre).isEmpty()) {
+            TipoNotificacion tipo = new TipoNotificacion();
+            tipo.setNombre(nombre);
+            tipoNotificacionRepositorio.save(tipo);
+            log.info("Se creo el tipo de notificacion {}", nombre);
+        }
+    }
+
+    private void crearEstadoNotificacionSiNoExiste(String nombre) {
+        if (estadoNotificacionRepositorio.findByNombre(nombre).isEmpty()) {
+            EstadoNotificacion estado = new EstadoNotificacion();
+            estado.setNombre(nombre);
+            estadoNotificacionRepositorio.save(estado);
+            log.info("Se creo el estado de notificacion {}", nombre);
         }
     }
 

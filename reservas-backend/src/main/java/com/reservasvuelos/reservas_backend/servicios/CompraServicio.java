@@ -87,6 +87,7 @@ public class CompraServicio {
     private final CobroServicio cobroServicio;
     private final Catalogos catalogos;
     private final UsuarioActual usuarioActual;
+    private final NotificadorServicio notificadorServicio;
     private final SecureRandom aleatorio = new SecureRandom();
 
     public CompraServicio(TarifaRepositorio tarifaRepositorio, AsientoRepositorio asientoRepositorio,
@@ -94,7 +95,8 @@ public class CompraServicio {
             PagoRepositorio pagoRepositorio, FacturaRepositorio facturaRepositorio,
             PromocionRepositorio promocionRepositorio, ClienteRepositorio clienteRepositorio,
             EmpleadoRepositorio empleadoRepositorio, PasajeroCompraServicio pasajeroCompraServicio,
-            CobroServicio cobroServicio, Catalogos catalogos, UsuarioActual usuarioActual) {
+            CobroServicio cobroServicio, Catalogos catalogos, UsuarioActual usuarioActual,
+            NotificadorServicio notificadorServicio) {
         this.tarifaRepositorio = tarifaRepositorio;
         this.asientoRepositorio = asientoRepositorio;
         this.tiqueteRepositorio = tiqueteRepositorio;
@@ -108,6 +110,7 @@ public class CompraServicio {
         this.cobroServicio = cobroServicio;
         this.catalogos = catalogos;
         this.usuarioActual = usuarioActual;
+        this.notificadorServicio = notificadorServicio;
     }
 
     @Transactional
@@ -186,6 +189,8 @@ public class CompraServicio {
 
         if (datos.pago() != null) {
             cobroServicio.cobrar(reserva, datos.pago(), personal);
+        } else {
+            notificadorServicio.reservaPendiente(reserva);
         }
         return detalle(reserva);
     }
@@ -251,6 +256,7 @@ public class CompraServicio {
 
         liberar(tiquetes, pagada ? "REEMBOLSADO" : "ANULADO");
         reserva.setEstado(catalogos.estadoReserva("CANCELADA"));
+        notificadorServicio.reservaCancelada(reserva, pagada);
         return detalle(reserva);
     }
 
@@ -288,6 +294,7 @@ public class CompraServicio {
         for (Reserva reserva : vencidas) {
             liberar(tiquetes(reserva), "ANULADO");
             reserva.setEstado(vencida);
+            notificadorServicio.reservaVencida(reserva);
         }
         LOG.info("Se vencieron {} reservas que no se pagaron a tiempo", vencidas.size());
     }

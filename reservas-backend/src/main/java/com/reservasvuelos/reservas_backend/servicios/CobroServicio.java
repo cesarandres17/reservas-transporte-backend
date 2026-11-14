@@ -27,14 +27,16 @@ public class CobroServicio {
     private final MetodoPagoRepositorio metodoPagoRepositorio;
     private final FacturaRepositorio facturaRepositorio;
     private final Catalogos catalogos;
+    private final NotificadorServicio notificadorServicio;
     private final SecureRandom aleatorio = new SecureRandom();
 
     public CobroServicio(PagoRepositorio pagoRepositorio, MetodoPagoRepositorio metodoPagoRepositorio,
-            FacturaRepositorio facturaRepositorio, Catalogos catalogos) {
+            FacturaRepositorio facturaRepositorio, Catalogos catalogos, NotificadorServicio notificadorServicio) {
         this.pagoRepositorio = pagoRepositorio;
         this.metodoPagoRepositorio = metodoPagoRepositorio;
         this.facturaRepositorio = facturaRepositorio;
         this.catalogos = catalogos;
+        this.notificadorServicio = notificadorServicio;
     }
 
     public void cobrar(Reserva reserva, PagoCompraDTO datos, boolean personal) {
@@ -68,18 +70,17 @@ public class CobroServicio {
         }
 
         reserva.setEstado(catalogos.estadoReserva("PAGADA"));
-        facturar(reserva);
+        notificadorServicio.pagoConfirmado(reserva, facturar(reserva));
     }
 
-    private void facturar(Reserva reserva) {
-        if (facturaRepositorio.existsById(reserva.getCodReserva())) {
-            return;
-        }
-        Factura factura = new Factura();
-        factura.setReserva(reserva);
-        factura.setNumeroFactura(String.format("FE-%06d", facturaRepositorio.ultimoConsecutivo() + 1));
-        factura.setFechaEmision(LocalDateTime.now());
-        facturaRepositorio.save(factura);
+    private Factura facturar(Reserva reserva) {
+        return facturaRepositorio.findById(reserva.getCodReserva()).orElseGet(() -> {
+            Factura factura = new Factura();
+            factura.setReserva(reserva);
+            factura.setNumeroFactura(String.format("FE-%06d", facturaRepositorio.ultimoConsecutivo() + 1));
+            factura.setFechaEmision(LocalDateTime.now());
+            return facturaRepositorio.save(factura);
+        });
     }
 
     private String referencia(MetodoPago metodo, String enviada) {

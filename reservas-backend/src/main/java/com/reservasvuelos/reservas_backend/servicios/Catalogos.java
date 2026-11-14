@@ -2,13 +2,17 @@ package com.reservasvuelos.reservas_backend.servicios;
 
 import org.springframework.stereotype.Component;
 
+import com.reservasvuelos.reservas_backend.Repositorio.EstadoNotificacionRepositorio;
 import com.reservasvuelos.reservas_backend.Repositorio.EstadoPagoRepositorio;
 import com.reservasvuelos.reservas_backend.Repositorio.EstadoReservaRepositorio;
 import com.reservasvuelos.reservas_backend.Repositorio.EstadoTiqueteRepositorio;
+import com.reservasvuelos.reservas_backend.Repositorio.TipoNotificacionRepositorio;
 import com.reservasvuelos.reservas_backend.Repositorio.TipoTrayectoRepositorio;
+import com.reservasvuelos.reservas_backend.model.EstadoNotificacion;
 import com.reservasvuelos.reservas_backend.model.EstadoPago;
 import com.reservasvuelos.reservas_backend.model.EstadoReserva;
 import com.reservasvuelos.reservas_backend.model.EstadoTiquete;
+import com.reservasvuelos.reservas_backend.model.TipoNotificacion;
 import com.reservasvuelos.reservas_backend.model.TipoTrayecto;
 
 @Component
@@ -18,13 +22,19 @@ public class Catalogos {
     private final EstadoPagoRepositorio estadoPagoRepositorio;
     private final EstadoTiqueteRepositorio estadoTiqueteRepositorio;
     private final TipoTrayectoRepositorio tipoTrayectoRepositorio;
+    private final TipoNotificacionRepositorio tipoNotificacionRepositorio;
+    private final EstadoNotificacionRepositorio estadoNotificacionRepositorio;
 
     public Catalogos(EstadoReservaRepositorio estadoReservaRepositorio, EstadoPagoRepositorio estadoPagoRepositorio,
-            EstadoTiqueteRepositorio estadoTiqueteRepositorio, TipoTrayectoRepositorio tipoTrayectoRepositorio) {
+            EstadoTiqueteRepositorio estadoTiqueteRepositorio, TipoTrayectoRepositorio tipoTrayectoRepositorio,
+            TipoNotificacionRepositorio tipoNotificacionRepositorio,
+            EstadoNotificacionRepositorio estadoNotificacionRepositorio) {
         this.estadoReservaRepositorio = estadoReservaRepositorio;
         this.estadoPagoRepositorio = estadoPagoRepositorio;
         this.estadoTiqueteRepositorio = estadoTiqueteRepositorio;
         this.tipoTrayectoRepositorio = tipoTrayectoRepositorio;
+        this.tipoNotificacionRepositorio = tipoNotificacionRepositorio;
+        this.estadoNotificacionRepositorio = estadoNotificacionRepositorio;
     }
 
     public EstadoReserva estadoReserva(String nombre) {
@@ -41,6 +51,16 @@ public class Catalogos {
 
     public TipoTrayecto tipoTrayecto(String nombre) {
         return tipoTrayectoRepositorio.findByNombre(nombre).orElseThrow(() -> faltante("tipo_trayecto", nombre));
+    }
+
+    public TipoNotificacion tipoNotificacion(String nombre) {
+        return tipoNotificacionRepositorio.findByNombre(nombre)
+                .orElseThrow(() -> faltante("tipo_notificacion", nombre));
+    }
+
+    public EstadoNotificacion estadoNotificacion(String nombre) {
+        return estadoNotificacionRepositorio.findByNombre(nombre)
+                .orElseThrow(() -> faltante("estado_notificacion", nombre));
     }
 
     private IllegalStateException faltante(String tabla, String nombre) {
