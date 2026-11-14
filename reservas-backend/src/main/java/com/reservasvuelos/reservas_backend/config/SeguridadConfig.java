@@ -21,6 +21,7 @@ public class SeguridadConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.POST, "/auth/registro").permitAll()
                 .requestMatchers("/error").permitAll()
+                .requestMatchers("/reportes/**").hasAnyRole("ADMINISTRADOR", "EMPLEADO")
                 .anyRequest().authenticated())
             .httpBasic(Customizer.withDefaults());
         return http.build();
