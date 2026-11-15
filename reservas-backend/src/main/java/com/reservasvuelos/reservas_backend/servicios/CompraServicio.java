@@ -167,9 +167,9 @@ public class CompraServicio {
         reserva.setDescuento(descuento);
         reserva.setTotal(subtotal.subtract(descuento));
         reserva.setCliente(cliente);
-        reserva.setEmpleado(personal ? empleadoRepositorio.findById(usuario.getCodUsuario()).orElse(null) : null);
+        reserva.setEmpleado(personal ? empleadoRepositorio.buscarPorId(usuario.getCodUsuario()).orElse(null) : null);
         reserva.setPromocion(promocion);
-        reservaRepositorio.save(reserva);
+        reservaRepositorio.insertar(reserva);
 
         EstadoTiquete emitido = catalogos.estadoTiquete("EMITIDO");
         TipoTrayecto ida = catalogos.tipoTrayecto("IDA");
@@ -187,9 +187,9 @@ public class CompraServicio {
             tiquete.setPasajero(pasajeros.get(i));
             tiquete.setTarifa(tarifa);
             tiquete.setAsiento(asientos.get(i));
-            tiqueteRepositorio.save(tiquete);
+            tiqueteRepositorio.insertar(tiquete);
         }
-        tarifa.setCuposDisponibles(tarifa.getCuposDisponibles() - cantidad);
+        tarifaRepositorio.descontarCupos(viaje.getCodViaje(), clase.getCodClase(), cantidad);
 
         if (datos.pago() != null) {
             cobroServicio.cobrar(reserva, datos.pago(), personal);
@@ -242,7 +242,7 @@ public class CompraServicio {
                     "El viaje ya salió, así que la reserva " + reserva.getCodigoReserva() + " no se puede cancelar");
         }
 
-        if (!viajeCancelado && checkinRepositorio.existsByTiquete_Reserva_CodReserva(reserva.getCodReserva())) {
+        if (!viajeCancelado && checkinRepositorio.existeEnReserva(reserva.getCodReserva())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "La reserva " + reserva.getCodigoReserva() + " ya tiene check-in, así que no se puede cancelar");
         }
@@ -258,13 +258,13 @@ public class CompraServicio {
                         + " no permite reembolso, así que la reserva pagada no se puede cancelar");
             }
             EstadoPago reembolsado = catalogos.estadoPago("REEMBOLSADO");
-            pagoRepositorio.findByReserva_CodReservaOrderByFechaPago(reserva.getCodReserva()).stream()
+            pagoRepositorio.deReserva(reserva.getCodReserva()).stream()
                     .filter(pago -> pago.getEstado().getNombre().equals("APROBADO"))
-                    .forEach(pago -> pago.setEstado(reembolsado));
+                    .forEach(pago -> pagoRepositorio.cambiarEstado(pago.getCodPago(), reembolsado.getCodEstado()));
         }
 
         liberar(tiquetes, pagada ? "REEMBOLSADO" : "ANULADO");
-        reserva.setEstado(catalogos.estadoReserva("CANCELADA"));
+        cambiarEstado(reserva, catalogos.estadoReserva("CANCELADA"));
         notificadorServicio.reservaCancelada(reserva, pagada);
         return detalle(reserva);
     }
@@ -286,7 +286,7 @@ public class CompraServicio {
         } else {
             cliente = usuarioActual.obtener(autenticacion).getCodUsuario();
         }
-        return reservaRepositorio.findByCliente_CodClienteOrderByFechaReservaDesc(cliente).stream()
+        return reservaRepositorio.deCliente(cliente).stream()
                 .map(this::detalle)
                 .toList();
     }
@@ -294,7 +294,7 @@ public class CompraServicio {
     @Scheduled(initialDelay = 30000, fixedDelay = 60000)
     @Transactional
     public void vencerReservasSinPago() {
-        List<Reserva> vencidas = reservaRepositorio.findByEstado_NombreAndFechaLimitePagoBefore("PENDIENTE",
+        List<Reserva> vencidas = reservaRepositorio.conEstadoYLimiteAntesDe("PENDIENTE",
                 LocalDateTime.now());
         if (vencidas.isEmpty()) {
             return;
@@ -302,7 +302,7 @@ public class CompraServicio {
         EstadoReserva vencida = catalogos.estadoReserva("VENCIDA");
         for (Reserva reserva : vencidas) {
             liberar(tiquetes(reserva), "ANULADO");
-            reserva.setEstado(vencida);
+            cambiarEstado(reserva, vencida);
             notificadorServicio.reservaVencida(reserva);
         }
         LOG.info("Se vencieron {} reservas que no se pagaron a tiempo", vencidas.size());
@@ -314,11 +314,11 @@ public class CompraServicio {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "Indica codCliente, el cliente para el que se hace la compra");
             }
-            return clienteRepositorio.findById(codCliente)
+            return clienteRepositorio.buscarPorId(codCliente)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                             "No existe el cliente " + codCliente));
         }
-        Cliente propio = clienteRepositorio.findById(usuario.getCodUsuario())
+        Cliente propio = clienteRepositorio.buscarPorId(usuario.getCodUsuario())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN,
                         "Tu usuario no tiene perfil de cliente"));
         if (codCliente != null && !codCliente.equals(propio.getCodCliente())) {
@@ -342,7 +342,7 @@ public class CompraServicio {
         if (codigo == null || codigo.isBlank()) {
             return null;
         }
-        Promocion promocion = promocionRepositorio.findByCodigoIgnoreCase(codigo.trim())
+        Promocion promocion = promocionRepositorio.buscarPorCodigo(codigo.trim())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "No existe la promoción " + codigo.trim()));
         LocalDate hoy = LocalDate.now();
@@ -450,6 +450,7 @@ public class CompraServicio {
             }
             tiquete.setEstado(nuevoEstado);
             tiquete.setAsiento(null);
+            tiqueteRepositorio.liberar(tiquete.getCodTiquete(), nuevoEstado.getCodEstado());
             ClaveTarifa clave = new ClaveTarifa(tiquete.getTarifa().getViaje().getCodViaje(),
                     tiquete.getTarifa().getClaseServicio().getCodClase());
             cupos.merge(clave, 1, Integer::sum);
@@ -457,8 +458,13 @@ public class CompraServicio {
         cupos.forEach((clave, cantidad) -> tarifaRepositorio.devolverCupos(clave.codViaje(), clave.codClase(), cantidad));
     }
 
+    private void cambiarEstado(Reserva reserva, EstadoReserva estado) {
+        reserva.setEstado(estado);
+        reservaRepositorio.cambiarEstado(reserva.getCodReserva(), estado.getCodEstado());
+    }
+
     private Reserva reservaConAcceso(Long codReserva, Authentication autenticacion) {
-        Reserva reserva = reservaRepositorio.findById(codReserva)
+        Reserva reserva = reservaRepositorio.buscarPorId(codReserva)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "No existe la reserva " + codReserva));
         String propietario = reserva.getCliente().getUsuario().getEmail();
@@ -469,13 +475,13 @@ public class CompraServicio {
     }
 
     private List<Tiquete> tiquetes(Reserva reserva) {
-        return tiqueteRepositorio.findByReserva_CodReservaOrderByCodTiquete(reserva.getCodReserva());
+        return tiqueteRepositorio.deReserva(reserva.getCodReserva());
     }
 
     private ReservaDetalleDTO detalle(Reserva reserva) {
         return ReservaDetalleDTO.desde(reserva, tiquetes(reserva),
-                pagoRepositorio.findByReserva_CodReservaOrderByFechaPago(reserva.getCodReserva()),
-                facturaRepositorio.findById(reserva.getCodReserva()).orElse(null));
+                pagoRepositorio.deReserva(reserva.getCodReserva()),
+                facturaRepositorio.buscarPorId(reserva.getCodReserva()).orElse(null));
     }
 
     private static BigDecimal descuento(BigDecimal valor, BigDecimal porcentaje) {
@@ -490,7 +496,7 @@ public class CompraServicio {
                 texto.append(LETRAS_CODIGO.charAt(aleatorio.nextInt(LETRAS_CODIGO.length())));
             }
             codigo = texto.toString();
-        } while (reservaRepositorio.existsByCodigoReserva(codigo));
+        } while (reservaRepositorio.existeCodigo(codigo));
         return codigo;
     }
 
@@ -499,7 +505,7 @@ public class CompraServicio {
         do {
             numero = terrestre ? "B" + String.format("%09d", aleatorio.nextLong(1_000_000_000L))
                     : "134" + String.format("%010d", aleatorio.nextLong(10_000_000_000L));
-        } while (tiqueteRepositorio.existsByNumeroTiquete(numero));
+        } while (tiqueteRepositorio.existeNumero(numero));
         return numero;
     }
 

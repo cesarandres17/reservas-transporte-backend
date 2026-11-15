@@ -41,26 +41,26 @@ public class DocumentoServicio {
 
     @Transactional(readOnly = true)
     public DocumentoPdf factura(Long codReserva, Authentication autenticacion) {
-        Factura factura = facturaRepositorio.findById(codReserva)
+        Factura factura = facturaRepositorio.buscarPorId(codReserva)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "No existe la factura de la reserva " + codReserva));
         validarAcceso(factura.getReserva(), autenticacion);
-        List<Tiquete> tiquetes = tiqueteRepositorio.findByReserva_CodReservaOrderByCodTiquete(codReserva);
-        List<Pago> pagos = pagoRepositorio.findByReserva_CodReservaOrderByFechaPago(codReserva);
+        List<Tiquete> tiquetes = tiqueteRepositorio.deReserva(codReserva);
+        List<Pago> pagos = pagoRepositorio.deReserva(codReserva);
         byte[] contenido = documentoPdfServicio.factura(factura, tiquetes, pagos);
         return new DocumentoPdf("factura-" + factura.getNumeroFactura() + ".pdf", contenido);
     }
 
     @Transactional(readOnly = true)
     public DocumentoPdf comprobante(Long codPago, Authentication autenticacion) {
-        Pago pago = pagoRepositorio.findById(codPago)
+        Pago pago = pagoRepositorio.buscarPorId(codPago)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No existe el pago " + codPago));
         Reserva reserva = pago.getReserva();
         validarAcceso(reserva, autenticacion);
-        List<Tiquete> tiquetes = tiqueteRepositorio.findByReserva_CodReservaOrderByCodTiquete(reserva.getCodReserva());
-        Factura factura = facturaRepositorio.findById(reserva.getCodReserva()).orElse(null);
+        List<Tiquete> tiquetes = tiqueteRepositorio.deReserva(reserva.getCodReserva());
+        Factura factura = facturaRepositorio.buscarPorId(reserva.getCodReserva()).orElse(null);
         List<Equipaje> piezas = CobroServicio.piezasPagadas(pago)
-                .map(pagadas -> equipajeRepositorio.findByTiquete_CodTiqueteOrderByNumeroPieza(pagadas.codTiquete())
+                .map(pagadas -> equipajeRepositorio.deTiquete(pagadas.codTiquete())
                         .stream()
                         .filter(pieza -> pagadas.incluye(pieza.getNumeroPieza()))
                         .toList())

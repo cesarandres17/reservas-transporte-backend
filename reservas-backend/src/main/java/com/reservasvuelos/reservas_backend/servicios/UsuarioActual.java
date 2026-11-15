@@ -26,7 +26,7 @@ public class UsuarioActual {
         if (autenticacion == null || autenticacion instanceof AnonymousAuthenticationToken) {
             return Optional.empty();
         }
-        return usuarioRepositorio.findByEmailIgnoreCase(autenticacion.getName());
+        return usuarioRepositorio.buscarPorEmail(autenticacion.getName());
     }
 
     public Usuario obtener(Authentication autenticacion) {

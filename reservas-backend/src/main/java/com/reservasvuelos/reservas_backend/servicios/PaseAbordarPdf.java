@@ -82,7 +82,7 @@ public class PaseAbordarPdf {
     public byte[] deTiquete(Checkin checkin) {
         Long codTiquete = checkin.getTiquete().getCodTiquete();
         return generar(List.of(checkin),
-                Map.of(codTiquete, equipajeRepositorio.findByTiquete_CodTiqueteOrderByNumeroPieza(codTiquete)));
+                Map.of(codTiquete, equipajeRepositorio.deTiquete(codTiquete)));
     }
 
     private byte[] generar(List<Checkin> checkins, Map<Long, List<Equipaje>> equipajes) {

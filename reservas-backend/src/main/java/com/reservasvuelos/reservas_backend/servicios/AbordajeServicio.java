@@ -103,12 +103,15 @@ public class AbordajeServicio {
         asignarSillas(viaje, seleccion);
 
         Empleado empleado = personal
-                ? empleadoRepositorio.findById(usuarioActual.obtener(autenticacion).getCodUsuario()).orElse(null)
+                ? empleadoRepositorio.buscarPorId(usuarioActual.obtener(autenticacion).getCodUsuario()).orElse(null)
                 : null;
         LocalDateTime ahora = LocalDateTime.now().withNano(0);
         boolean aereo = ReglasAbordaje.esAereo(viaje);
         List<Tiquete> registrados = new ArrayList<>(seleccion.keySet());
         for (Tiquete tiquete : registrados) {
+            Asiento asiento = tiquete.getAsiento();
+            tiqueteRepositorio.asignarAsiento(tiquete.getCodTiquete(), asiento.getVehiculo().getCodVehiculo(),
+                    asiento.getNumeroAsiento());
             Checkin checkin = new Checkin();
             checkin.setTiquete(tiquete);
             checkin.setFechaHora(ahora);
@@ -116,9 +119,8 @@ public class AbordajeServicio {
             checkin.setCodigoPaseAbordar(String.format("PB%010d", tiquete.getCodTiquete()));
             checkin.setGrupoAbordaje(aereo ? grupo(tiquete) : null);
             checkin.setEmpleado(empleado);
-            checkinRepositorio.save(checkin);
+            checkinRepositorio.insertar(checkin);
         }
-        checkinRepositorio.flush();
         notificadorServicio.checkinRealizado(reserva, viaje, registrados);
         return resumen(reserva);
     }
@@ -136,10 +138,10 @@ public class AbordajeServicio {
 
     @Transactional(readOnly = true)
     public DocumentoPdf paseDeTiquete(Long codTiquete, Authentication autenticacion) {
-        Tiquete tiquete = tiqueteRepositorio.findById(codTiquete)
+        Tiquete tiquete = tiqueteRepositorio.buscarPorId(codTiquete)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No existe el tiquete " + codTiquete));
         validarAcceso(tiquete.getReserva(), autenticacion);
-        Checkin checkin = checkinRepositorio.findById(codTiquete)
+        Checkin checkin = checkinRepositorio.buscarPorId(codTiquete)
                 .filter(encontrado -> PaseAbordarPdf.ESTADOS_CON_PASE.contains(tiquete.getEstado().getNombre()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, "El pasajero "
                         + PasajeroCompraServicio.nombre(tiquete.getPasajero()) + " no tiene check-in en este viaje"));
@@ -333,11 +335,11 @@ public class AbordajeServicio {
     }
 
     private List<Tiquete> tiquetes(Reserva reserva) {
-        return tiqueteRepositorio.findByReserva_CodReservaOrderByCodTiquete(reserva.getCodReserva());
+        return tiqueteRepositorio.deReserva(reserva.getCodReserva());
     }
 
     private Reserva reservaConAcceso(Long codReserva, Authentication autenticacion) {
-        Reserva reserva = reservaRepositorio.findById(codReserva)
+        Reserva reserva = reservaRepositorio.buscarPorId(codReserva)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No existe la reserva " + codReserva));
         validarAcceso(reserva, autenticacion);
         return reserva;

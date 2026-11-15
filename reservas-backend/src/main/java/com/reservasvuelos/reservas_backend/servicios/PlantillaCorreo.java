@@ -56,7 +56,7 @@ public class PlantillaCorreo {
         String nombreAdjunto = null;
         byte[] adjunto = null;
 
-        Reserva reserva = codReserva == null ? null : reservaRepositorio.findById(codReserva).orElse(null);
+        Reserva reserva = codReserva == null ? null : reservaRepositorio.buscarPorId(codReserva).orElse(null);
         if (reserva != null) {
             datos.put("Código de reserva", reserva.getCodigoReserva());
         }
@@ -78,7 +78,7 @@ public class PlantillaCorreo {
             if (estado.equals("PENDIENTE") && reserva.getFechaLimitePago() != null) {
                 datos.put("Paga antes del", Formatos.fechaHora(reserva.getFechaLimitePago()));
             }
-            List<Tiquete> lista = tiqueteRepositorio.findByReserva_CodReservaOrderByCodTiquete(codReserva);
+            List<Tiquete> lista = tiqueteRepositorio.deReserva(codReserva);
             for (Tiquete tiquete : lista) {
                 Pasajero pasajero = tiquete.getPasajero();
                 tiquetes.add(new String[] {
@@ -88,11 +88,11 @@ public class PlantillaCorreo {
                         tiquete.getNumeroTiquete(),
                         Formatos.legible(tiquete.getEstado().getNombre())});
             }
-            Factura factura = tipoAdjunto == Adjunto.FACTURA ? facturaRepositorio.findById(codReserva).orElse(null)
+            Factura factura = tipoAdjunto == Adjunto.FACTURA ? facturaRepositorio.buscarPorId(codReserva).orElse(null)
                     : null;
             if (factura != null) {
                 adjunto = documentoPdfServicio.factura(factura, lista,
-                        pagoRepositorio.findByReserva_CodReservaOrderByFechaPago(codReserva));
+                        pagoRepositorio.deReserva(codReserva));
                 nombreAdjunto = "factura-" + factura.getNumeroFactura() + ".pdf";
             }
             if (tipoAdjunto == Adjunto.PASES_ABORDAR) {

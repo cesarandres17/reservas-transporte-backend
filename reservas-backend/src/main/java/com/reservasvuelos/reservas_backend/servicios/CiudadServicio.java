@@ -33,6 +33,6 @@ public class CiudadServicio extends CrudServicio<Ciudad, Long> {
     }
 
     public List<Ciudad> buscarPorDepartamento(Long codDepartamento) {
-        return ciudadRepositorio.findByDepartamento_CodDepartamento(codDepartamento);
+        return ciudadRepositorio.deDepartamento(codDepartamento);
     }
 }

@@ -97,18 +97,18 @@ public class DisponibilidadServicio {
         busqueda.setNumeroPasajeros(pasajeros);
         busqueda.setResultados(resultado.size());
         busqueda.setCliente(usuarioActual.buscar(autenticacion)
-                .flatMap(usuario -> clienteRepositorio.findById(usuario.getCodUsuario()))
+                .flatMap(usuario -> clienteRepositorio.buscarPorId(usuario.getCodUsuario()))
                 .orElse(null));
         busqueda.setCiudadOrigen(ciudadOrigen);
         busqueda.setCiudadDestino(ciudadDestino);
-        busquedaRepositorio.save(busqueda);
+        busquedaRepositorio.insertar(busqueda);
 
         return resultado;
     }
 
     @Transactional(readOnly = true)
     public MapaAsientosDTO asientos(Long codViaje) {
-        Viaje viaje = viajeRepositorio.findById(codViaje)
+        Viaje viaje = viajeRepositorio.buscarPorId(codViaje)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No existe el viaje " + codViaje));
         List<Asiento> asientos = asientoRepositorio.delVehiculo(viaje.getVehiculo().getCodVehiculo());
         Set<String> ocupados = tiqueteRepositorio.asientosOcupados(codViaje);
@@ -128,7 +128,7 @@ public class DisponibilidadServicio {
     }
 
     private Ciudad ciudad(Long codCiudad) {
-        return ciudadRepositorio.findById(codCiudad)
+        return ciudadRepositorio.buscarPorId(codCiudad)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No existe la ciudad " + codCiudad));
     }
 }

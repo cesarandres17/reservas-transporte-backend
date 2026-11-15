@@ -38,28 +38,28 @@ public class Catalogos {
     }
 
     public EstadoReserva estadoReserva(String nombre) {
-        return estadoReservaRepositorio.findByNombre(nombre).orElseThrow(() -> faltante("estado_reserva", nombre));
+        return estadoReservaRepositorio.buscarPorNombre(nombre).orElseThrow(() -> faltante("estado_reserva", nombre));
     }
 
     public EstadoPago estadoPago(String nombre) {
-        return estadoPagoRepositorio.findByNombre(nombre).orElseThrow(() -> faltante("estado_pago", nombre));
+        return estadoPagoRepositorio.buscarPorNombre(nombre).orElseThrow(() -> faltante("estado_pago", nombre));
     }
 
     public EstadoTiquete estadoTiquete(String nombre) {
-        return estadoTiqueteRepositorio.findByNombre(nombre).orElseThrow(() -> faltante("estado_tiquete", nombre));
+        return estadoTiqueteRepositorio.buscarPorNombre(nombre).orElseThrow(() -> faltante("estado_tiquete", nombre));
     }
 
     public TipoTrayecto tipoTrayecto(String nombre) {
-        return tipoTrayectoRepositorio.findByNombre(nombre).orElseThrow(() -> faltante("tipo_trayecto", nombre));
+        return tipoTrayectoRepositorio.buscarPorNombre(nombre).orElseThrow(() -> faltante("tipo_trayecto", nombre));
     }
 
     public TipoNotificacion tipoNotificacion(String nombre) {
-        return tipoNotificacionRepositorio.findByNombre(nombre)
+        return tipoNotificacionRepositorio.buscarPorNombre(nombre)
                 .orElseThrow(() -> faltante("tipo_notificacion", nombre));
     }
 
     public EstadoNotificacion estadoNotificacion(String nombre) {
-        return estadoNotificacionRepositorio.findByNombre(nombre)
+        return estadoNotificacionRepositorio.buscarPorNombre(nombre)
                 .orElseThrow(() -> faltante("estado_notificacion", nombre));
     }
 

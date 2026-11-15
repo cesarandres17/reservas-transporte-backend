@@ -32,6 +32,6 @@ public class DepartamentoServicio extends CrudServicio<Departamento, Long> {
     }
 
     public List<Departamento> buscarPorPais(Long codPais) {
-        return departamentoRepositorio.findByPais_CodPais(codPais);
+        return departamentoRepositorio.dePais(codPais);
     }
 }

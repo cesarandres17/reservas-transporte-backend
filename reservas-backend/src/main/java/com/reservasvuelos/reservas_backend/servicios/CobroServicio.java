@@ -13,8 +13,10 @@ import org.springframework.web.server.ResponseStatusException;
 import com.reservasvuelos.reservas_backend.Repositorio.FacturaRepositorio;
 import com.reservasvuelos.reservas_backend.Repositorio.MetodoPagoRepositorio;
 import com.reservasvuelos.reservas_backend.Repositorio.PagoRepositorio;
+import com.reservasvuelos.reservas_backend.Repositorio.ReservaRepositorio;
 import com.reservasvuelos.reservas_backend.dto.PagoCompraDTO;
 import com.reservasvuelos.reservas_backend.model.EstadoPago;
+import com.reservasvuelos.reservas_backend.model.EstadoReserva;
 import com.reservasvuelos.reservas_backend.model.Factura;
 import com.reservasvuelos.reservas_backend.model.MetodoPago;
 import com.reservasvuelos.reservas_backend.model.Pago;
@@ -32,15 +34,18 @@ public class CobroServicio {
     private final PagoRepositorio pagoRepositorio;
     private final MetodoPagoRepositorio metodoPagoRepositorio;
     private final FacturaRepositorio facturaRepositorio;
+    private final ReservaRepositorio reservaRepositorio;
     private final Catalogos catalogos;
     private final NotificadorServicio notificadorServicio;
     private final SecureRandom aleatorio = new SecureRandom();
 
     public CobroServicio(PagoRepositorio pagoRepositorio, MetodoPagoRepositorio metodoPagoRepositorio,
-            FacturaRepositorio facturaRepositorio, Catalogos catalogos, NotificadorServicio notificadorServicio) {
+            FacturaRepositorio facturaRepositorio, ReservaRepositorio reservaRepositorio, Catalogos catalogos,
+            NotificadorServicio notificadorServicio) {
         this.pagoRepositorio = pagoRepositorio;
         this.metodoPagoRepositorio = metodoPagoRepositorio;
         this.facturaRepositorio = facturaRepositorio;
+        this.reservaRepositorio = reservaRepositorio;
         this.catalogos = catalogos;
         this.notificadorServicio = notificadorServicio;
     }
@@ -49,16 +54,18 @@ public class CobroServicio {
         MetodoPago metodo = metodo(datos.codMetodo(), datos.cuotas(), personal);
 
         EstadoPago rechazado = catalogos.estadoPago("RECHAZADO");
-        pagoRepositorio.findByReserva_CodReservaOrderByFechaPago(reserva.getCodReserva()).stream()
+        pagoRepositorio.deReserva(reserva.getCodReserva()).stream()
                 .filter(anterior -> anterior.getEstado().getNombre().equals("PENDIENTE"))
-                .forEach(anterior -> anterior.setEstado(rechazado));
+                .forEach(anterior -> pagoRepositorio.cambiarEstado(anterior.getCodPago(), rechazado.getCodEstado()));
 
         if (reserva.getTotal().signum() > 0) {
             guardar(reserva, reserva.getTotal(), metodo, datos.cuotas(),
                     referencia(metodo, datos.referenciaTransaccion()));
         }
 
-        reserva.setEstado(catalogos.estadoReserva("PAGADA"));
+        EstadoReserva pagada = catalogos.estadoReserva("PAGADA");
+        reserva.setEstado(pagada);
+        reservaRepositorio.cambiarEstado(reserva.getCodReserva(), pagada.getCodEstado());
         notificadorServicio.pagoConfirmado(reserva, facturar(reserva));
     }
 
@@ -94,7 +101,7 @@ public class CobroServicio {
     }
 
     private MetodoPago metodo(Long codMetodo, Integer cuotas, boolean personal) {
-        MetodoPago metodo = metodoPagoRepositorio.findById(codMetodo)
+        MetodoPago metodo = metodoPagoRepositorio.buscarPorId(codMetodo)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "No existe el método de pago " + codMetodo));
         if (metodo.getTipo() == TipoMetodoPago.EFECTIVO && !personal) {
@@ -117,16 +124,16 @@ public class CobroServicio {
         pago.setEstado(catalogos.estadoPago("APROBADO"));
         pago.setReserva(reserva);
         pago.setMetodoPago(metodo);
-        return pagoRepositorio.save(pago);
+        return pagoRepositorio.insertar(pago);
     }
 
     private Factura facturar(Reserva reserva) {
-        return facturaRepositorio.findById(reserva.getCodReserva()).orElseGet(() -> {
+        return facturaRepositorio.buscarPorId(reserva.getCodReserva()).orElseGet(() -> {
             Factura factura = new Factura();
             factura.setReserva(reserva);
             factura.setNumeroFactura(String.format("FE-%06d", facturaRepositorio.ultimoConsecutivo() + 1));
             factura.setFechaEmision(LocalDateTime.now());
-            return facturaRepositorio.save(factura);
+            return facturaRepositorio.insertar(factura);
         });
     }
 
@@ -140,7 +147,7 @@ public class CobroServicio {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "Las referencias que empiezan por " + PREFIJO_EQUIPAJE + " son de pagos de equipaje");
             }
-            if (pagoRepositorio.existsByReferenciaTransaccion(referencia)) {
+            if (pagoRepositorio.existeReferencia(referencia)) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT,
                         "La referencia de transacción " + referencia + " ya fue usada en otro pago");
             }
@@ -157,7 +164,7 @@ public class CobroServicio {
                 texto.append(CARACTERES_REFERENCIA.charAt(aleatorio.nextInt(CARACTERES_REFERENCIA.length())));
             }
             referencia = texto.toString();
-        } while (pagoRepositorio.existsByReferenciaTransaccion(referencia));
+        } while (pagoRepositorio.existeReferencia(referencia));
         return referencia;
     }
 }

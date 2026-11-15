@@ -54,7 +54,7 @@ public class RegistroEquipajeServicio {
 
     @Transactional
     public EquipajeRegistradoDTO registrar(Long codTiquete, EquipajeSolicitudDTO datos, Authentication autenticacion) {
-        Tiquete tiquete = tiqueteRepositorio.findById(codTiquete)
+        Tiquete tiquete = tiqueteRepositorio.buscarPorId(codTiquete)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No existe el tiquete " + codTiquete));
         if (!usuarioActual.puedeGestionar(tiquete.getReserva(), autenticacion)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo puedes gestionar tus propias reservas");
@@ -64,7 +64,7 @@ public class RegistroEquipajeServicio {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "El tiquete de " + pasajero + " está "
                     + Formatos.legible(tiquete.getEstado().getNombre()).toLowerCase(Locale.ROOT));
         }
-        if (!checkinRepositorio.existsById(codTiquete)) {
+        if (!checkinRepositorio.existePorId(codTiquete)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Primero haz el check-in de " + pasajero + " y después registra el equipaje");
         }
@@ -78,7 +78,7 @@ public class RegistroEquipajeServicio {
                     + viaje.getCodigoViaje() + " cerró el " + Formatos.cuando(ReglasAbordaje.cierraCheckin(viaje)));
         }
 
-        List<Equipaje> actuales = equipajeRepositorio.findByTiquete_CodTiqueteOrderByNumeroPieza(codTiquete);
+        List<Equipaje> actuales = equipajeRepositorio.deTiquete(codTiquete);
         int siguiente = actuales.stream().mapToInt(Equipaje::getNumeroPieza).max().orElse(0) + 1;
         long deMano = actuales.stream().filter(pieza -> pieza.getTipo() == TipoEquipaje.MANO).count();
         long despachadas = actuales.size() - deMano;
@@ -142,10 +142,9 @@ public class RegistroEquipajeServicio {
                     nuevas.get(nuevas.size() - 1).getNumeroPieza(), total.setScale(2), datos.codMetodo(), datos.cuotas(),
                     usuarioActual.esPersonal(autenticacion));
         }
-        equipajeRepositorio.saveAll(nuevas);
-        equipajeRepositorio.flush();
+        equipajeRepositorio.insertarTodos(nuevas);
 
-        List<EquipajeRegistrado> todas = equipajeRepositorio.findByTiquete_CodTiqueteOrderByNumeroPieza(codTiquete)
+        List<EquipajeRegistrado> todas = equipajeRepositorio.deTiquete(codTiquete)
                 .stream().map(EquipajeRegistrado::desde).toList();
         return new EquipajeRegistradoDTO(codTiquete, PasajeroCompraServicio.nombre(tiquete.getPasajero()), incluidoKg,
                 nuevas.stream().map(EquipajeRegistrado::desde).toList(), todas, total.setScale(2),

@@ -109,7 +109,7 @@ public class CorreoServicio {
     }
 
     private Envio preparar(AvisoCreado aviso) {
-        Notificacion notificacion = notificacionRepositorio.findById(aviso.codNotificacion()).orElse(null);
+        Notificacion notificacion = notificacionRepositorio.buscarPorId(aviso.codNotificacion()).orElse(null);
         if (notificacion == null) {
             return null;
         }
@@ -187,6 +187,7 @@ public class CorreoServicio {
             if (enviado) {
                 fila.setFechaEnvio(ahora);
             }
+            clienteNotificacionRepositorio.actualizar(fila);
         }
     }
 

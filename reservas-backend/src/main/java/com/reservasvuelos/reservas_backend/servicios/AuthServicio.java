@@ -50,25 +50,25 @@ public class AuthServicio {
     @Transactional
     public UsuarioDTO registrarCliente(RegistroClienteDTO datos) {
         String email = datos.email().trim().toLowerCase();
-        if (usuarioRepositorio.existsByEmailIgnoreCase(email)) {
+        if (usuarioRepositorio.existeEmail(email)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe una cuenta con el email " + email);
         }
 
-        TipoDocumento tipoDocumento = tipoDocumentoRepositorio.findBySiglaIgnoreCase(datos.siglaTipoDocumento())
+        TipoDocumento tipoDocumento = tipoDocumentoRepositorio.buscarPorSigla(datos.siglaTipoDocumento())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "No existe el tipo de documento " + datos.siglaTipoDocumento()));
-        if (usuarioRepositorio.existsByTipoDocumentoAndNumeroDocumento(tipoDocumento, datos.numeroDocumento())) {
+        if (usuarioRepositorio.existeDocumento(tipoDocumento.getCodTipo(), datos.numeroDocumento())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe una cuenta con ese documento");
         }
 
         Ciudad ciudad = null;
         if (datos.codCiudad() != null) {
-            ciudad = ciudadRepositorio.findById(datos.codCiudad())
+            ciudad = ciudadRepositorio.buscarPorId(datos.codCiudad())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
                             "No existe la ciudad " + datos.codCiudad()));
         }
 
-        Rol rolCliente = rolRepositorio.findByNombre(ROL_CLIENTE)
+        Rol rolCliente = rolRepositorio.buscarPorNombre(ROL_CLIENTE)
                 .orElseThrow(() -> new IllegalStateException("Falta el rol " + ROL_CLIENTE + " en la tabla rol"));
 
         Usuario usuario = new Usuario();
@@ -87,18 +87,18 @@ public class AuthServicio {
         usuario.setFechaRegistro(LocalDate.now());
         usuario.setEstado(EstadoUsuario.ACTIVO);
         usuario.setRol(rolCliente);
-        usuarioRepositorio.save(usuario);
+        usuarioRepositorio.insertar(usuario);
 
         Cliente cliente = new Cliente();
         cliente.setUsuario(usuario);
         cliente.setRecibeNotificaciones(datos.recibeNotificaciones() == null || datos.recibeNotificaciones());
-        clienteRepositorio.save(cliente);
+        clienteRepositorio.insertar(cliente);
 
         return UsuarioDTO.desde(usuario);
     }
 
     public UsuarioDTO perfil(String email) {
-        return usuarioRepositorio.findByEmailIgnoreCase(email)
+        return usuarioRepositorio.buscarPorEmail(email)
                 .map(UsuarioDTO::desde)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No existe el usuario " + email));
     }

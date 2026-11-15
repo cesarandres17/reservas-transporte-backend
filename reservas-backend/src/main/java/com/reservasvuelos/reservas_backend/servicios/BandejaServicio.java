@@ -47,7 +47,7 @@ public class BandejaServicio {
     public NotificacionClienteDTO marcarLeida(Long codNotificacion, Authentication autenticacion) {
         Long codCliente = codCliente(autenticacion);
         ClienteNotificacion fila = codCliente == null ? null : clienteNotificacionRepositorio
-                .findById(ClienteNotificacionServicio.id(codCliente, codNotificacion)).orElse(null);
+                .buscarPorId(ClienteNotificacionServicio.id(codCliente, codNotificacion)).orElse(null);
         if (fila == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "No tienes la notificación " + codNotificacion);
@@ -78,11 +78,12 @@ public class BandejaServicio {
         if (fila.getFechaLectura() == null) {
             fila.setEstadoNotificacion(leida);
             fila.setFechaLectura(ahora);
+            clienteNotificacionRepositorio.actualizar(fila);
         }
     }
 
     private Long codCliente(Authentication autenticacion) {
         Long codUsuario = usuarioActual.obtener(autenticacion).getCodUsuario();
-        return clienteRepositorio.existsById(codUsuario) ? codUsuario : null;
+        return clienteRepositorio.existePorId(codUsuario) ? codUsuario : null;
     }
 }

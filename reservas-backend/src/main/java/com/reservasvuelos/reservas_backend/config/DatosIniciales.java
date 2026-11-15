@@ -60,7 +60,7 @@ public class DatosIniciales implements CommandLineRunner {
         crearRolSiNoExiste(AuthServicio.ROL_EMPLEADO, "Atiende reservas, pagos y check-in");
         crearRolSiNoExiste(AuthServicio.ROL_CLIENTE, "Busca viajes, reserva y paga");
 
-        if (!usuarioRepositorio.existsByRol_Nombre(AuthServicio.ROL_ADMINISTRADOR)) {
+        if (!usuarioRepositorio.existeConRol(AuthServicio.ROL_ADMINISTRADOR)) {
             crearAdministrador(administrador);
         }
         NotificadorServicio.TIPOS.forEach(this::crearTipoNotificacionSiNoExiste);
@@ -68,39 +68,39 @@ public class DatosIniciales implements CommandLineRunner {
     }
 
     private void crearTipoNotificacionSiNoExiste(String nombre) {
-        if (tipoNotificacionRepositorio.findByNombre(nombre).isEmpty()) {
+        if (tipoNotificacionRepositorio.buscarPorNombre(nombre).isEmpty()) {
             TipoNotificacion tipo = new TipoNotificacion();
             tipo.setNombre(nombre);
-            tipoNotificacionRepositorio.save(tipo);
+            tipoNotificacionRepositorio.insertar(tipo);
             log.info("Se creo el tipo de notificacion {}", nombre);
         }
     }
 
     private void crearEstadoNotificacionSiNoExiste(String nombre) {
-        if (estadoNotificacionRepositorio.findByNombre(nombre).isEmpty()) {
+        if (estadoNotificacionRepositorio.buscarPorNombre(nombre).isEmpty()) {
             EstadoNotificacion estado = new EstadoNotificacion();
             estado.setNombre(nombre);
-            estadoNotificacionRepositorio.save(estado);
+            estadoNotificacionRepositorio.insertar(estado);
             log.info("Se creo el estado de notificacion {}", nombre);
         }
     }
 
     private Rol crearRolSiNoExiste(String nombre, String descripcion) {
-        return rolRepositorio.findByNombre(nombre).orElseGet(() -> {
+        return rolRepositorio.buscarPorNombre(nombre).orElseGet(() -> {
             Rol rol = new Rol();
             rol.setNombre(nombre);
             rol.setDescripcion(descripcion);
             log.info("Se creo el rol {}", nombre);
-            return rolRepositorio.save(rol);
+            return rolRepositorio.insertar(rol);
         });
     }
 
     private void crearAdministrador(Rol administrador) {
-        TipoDocumento cedula = tipoDocumentoRepositorio.findBySiglaIgnoreCase("CC").orElseGet(() -> {
+        TipoDocumento cedula = tipoDocumentoRepositorio.buscarPorSigla("CC").orElseGet(() -> {
             TipoDocumento tipo = new TipoDocumento();
             tipo.setSigla("CC");
             tipo.setNombre("Cédula de ciudadanía");
-            return tipoDocumentoRepositorio.save(tipo);
+            return tipoDocumentoRepositorio.insertar(tipo);
         });
 
         Usuario admin = new Usuario();
@@ -113,7 +113,7 @@ public class DatosIniciales implements CommandLineRunner {
         admin.setFechaRegistro(LocalDate.now());
         admin.setEstado(EstadoUsuario.ACTIVO);
         admin.setRol(administrador);
-        usuarioRepositorio.save(admin);
+        usuarioRepositorio.insertar(admin);
         log.info("Se creo el usuario administrador {}", emailAdmin);
     }
 }

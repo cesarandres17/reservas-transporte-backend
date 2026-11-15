@@ -91,7 +91,7 @@ public class NotificadorServicio {
 
     public void reservaPendiente(Reserva reserva) {
         Viaje viaje = viaje(reserva);
-        int sillas = tiqueteRepositorio.findByReserva_CodReservaOrderByCodTiquete(reserva.getCodReserva()).size();
+        int sillas = tiqueteRepositorio.deReserva(reserva.getCodReserva()).size();
         String mensaje = "Apartamos " + sillas + (sillas == 1 ? " cupo" : " cupos") + " en el viaje "
                 + descripcion(viaje) + " del " + Formatos.cuando(viaje.getFechaHoraSalida()) + ". El total es "
                 + Formatos.dinero(reserva.getTotal()) + ". Págala antes del "
@@ -154,7 +154,7 @@ public class NotificadorServicio {
         if (!cancelado && cambios.isEmpty()) {
             return;
         }
-        List<Cliente> clientes = tiqueteRepositorio.clientesDelViaje(viaje.getCodViaje());
+        List<Cliente> clientes = clienteRepositorio.conTiquetesEnViaje(viaje.getCodViaje());
         if (clientes.isEmpty()) {
             return;
         }
@@ -218,14 +218,14 @@ public class NotificadorServicio {
 
     @Transactional
     public EnvioPromocionDTO promocion(Long codPromocion) {
-        Promocion promocion = promocionRepositorio.findById(codPromocion)
+        Promocion promocion = promocionRepositorio.buscarPorId(codPromocion)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "No existe la promoción " + codPromocion));
         if (promocion.getFechaFin().isBefore(LocalDate.now())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La promoción " + promocion.getCodigo()
                     + " terminó el " + Formatos.fecha(promocion.getFechaFin()));
         }
-        List<Cliente> clientes = clienteRepositorio.findByRecibeNotificacionesTrue();
+        List<Cliente> clientes = clienteRepositorio.conNotificaciones();
         if (clientes.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Ningún cliente acepta recibir promociones");
         }
@@ -249,7 +249,7 @@ public class NotificadorServicio {
         notificacion.setTipoNotificacion(catalogos.tipoNotificacion(tipo));
         notificacion.setViaje(viaje);
         notificacion.setPromocion(promocion);
-        notificacionRepositorio.save(notificacion);
+        notificacionRepositorio.insertar(notificacion);
 
         EstadoNotificacion pendiente = catalogos.estadoNotificacion("PENDIENTE");
         List<ClienteNotificacion> destinatarios = new ArrayList<>();
@@ -260,13 +260,13 @@ public class NotificadorServicio {
             destinatario.setEstadoNotificacion(pendiente);
             destinatarios.add(destinatario);
         }
-        clienteNotificacionRepositorio.saveAll(destinatarios);
+        clienteNotificacionRepositorio.insertarTodos(destinatarios);
         eventos.publishEvent(new AvisoCreado(notificacion.getCodNotificacion(), codReserva, adjunto));
         return notificacion;
     }
 
     private Viaje viaje(Reserva reserva) {
-        return tiqueteRepositorio.findByReserva_CodReservaOrderByCodTiquete(reserva.getCodReserva()).get(0)
+        return tiqueteRepositorio.deReserva(reserva.getCodReserva()).get(0)
                 .getTarifa().getViaje();
     }
 

@@ -37,7 +37,7 @@ public class PasajeroCompraServicio {
 
     public Pasajero resolver(PasajeroCompra datos, int posicion, LocalDate fechaViaje) {
         if (datos.codPasajero() != null) {
-            return pasajeroRepositorio.findById(datos.codPasajero())
+            return pasajeroRepositorio.buscarPorId(datos.codPasajero())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
                             "No existe el pasajero " + datos.codPasajero()));
         }
@@ -45,11 +45,11 @@ public class PasajeroCompraServicio {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Pasajero " + posicion
                     + ": envía codPasajero, o siglaTipoDocumento y numeroDocumento");
         }
-        TipoDocumento tipoDocumento = tipoDocumentoRepositorio.findBySiglaIgnoreCase(datos.siglaTipoDocumento().trim())
+        TipoDocumento tipoDocumento = tipoDocumentoRepositorio.buscarPorSigla(datos.siglaTipoDocumento().trim())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "No existe el tipo de documento " + datos.siglaTipoDocumento()));
         String numeroDocumento = datos.numeroDocumento().trim();
-        Optional<Pasajero> registrado = pasajeroRepositorio.findByTipoDocumentoAndNumeroDocumento(tipoDocumento,
+        Optional<Pasajero> registrado = pasajeroRepositorio.buscarPorDocumento(tipoDocumento.getCodTipo(),
                 numeroDocumento);
         if (registrado.isPresent()) {
             return registrado.get();
@@ -71,7 +71,7 @@ public class PasajeroCompraServicio {
         }
 
         String codigoPais = vacio(datos.codigoPais()) ? PAIS_POR_DEFECTO : datos.codigoPais().trim();
-        Pais pais = paisRepositorio.findByCodigoIsoIgnoreCase(codigoPais)
+        Pais pais = paisRepositorio.buscarPorCodigoIso(codigoPais)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "No existe el país con código " + codigoPais));
 
@@ -87,7 +87,7 @@ public class PasajeroCompraServicio {
         pasajero.setTipoPasajero(datos.tipoPasajero() != null ? datos.tipoPasajero()
                 : segunEdad(datos.fechaNacimiento(), fechaViaje));
         pasajero.setPais(pais);
-        return pasajeroRepositorio.save(pasajero);
+        return pasajeroRepositorio.insertar(pasajero);
     }
 
     public static TipoPasajero segunEdad(LocalDate fechaNacimiento, LocalDate fechaViaje) {

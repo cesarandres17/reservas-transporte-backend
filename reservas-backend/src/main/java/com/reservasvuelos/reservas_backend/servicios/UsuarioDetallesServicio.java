@@ -21,7 +21,7 @@ public class UsuarioDetallesServicio implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Usuario usuario = usuarioRepositorio.findByEmailIgnoreCase(email)
+        Usuario usuario = usuarioRepositorio.buscarPorEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("No existe un usuario con el email " + email));
 
         return User.withUsername(usuario.getEmail())
